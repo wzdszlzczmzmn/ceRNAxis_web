@@ -629,25 +629,30 @@ const NetworkGraph = ({ networkData }) => {
                 }}
                 layout={{
                     name: "fcose",
+
                     animate: false,
                     fit: true,
-                    padding: 40,
+                    padding: 60,
 
                     quality: "default",
+
                     randomize: true,
 
-                    nodeSeparation: 80,
-                    idealEdgeLength: 90,
-                    nodeRepulsion: 6000,
-                    edgeElasticity: 0.55,
+                    nodeSeparation: 150,
+                    idealEdgeLength: 180,
+                    nodeRepulsion: 12000,
+
+                    edgeElasticity: 0.3,
 
                     nestingFactor: 0.1,
-                    gravity: 0.45,
+
+                    gravity: 0.2,
                     gravityRangeCompound: 1.5,
                     gravityCompound: 1.0,
                     gravityRange: 4.5,
 
                     numIter: 2500,
+
                     tile: true,
                 }}
                 wheelSensitivity={0.2}

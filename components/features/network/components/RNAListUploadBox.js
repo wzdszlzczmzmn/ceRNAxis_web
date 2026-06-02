@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Alert, Button, Card, Col, Flex, Input, Modal, Progress, Row, Space, Typography } from "antd";
 import BasicChip from "@/components/ui/chips/BasicChip"
 import { Box } from "@mui/system"
-import { FileTextOutlined } from "@ant-design/icons"
+import { ExperimentOutlined, FileTextOutlined } from "@ant-design/icons"
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -26,6 +26,13 @@ const initialInputValue = {
 };
 
 const INVALID_SEPARATOR_PATTERN = /[，；;\n\r\t、]/;
+
+const demoInputValue = {
+    miRNA: "hsa-mir-567,hsa-miR-6742-5p,hsa-miR-127-5p,hsa-miR-9-3p,hsa-mir-1305,hsa-miR-4487,hsa-mir-629,hsa-mir-181a-2,hsa-miR-548o-3p,hsa-miR-642a-5p,hsa-miR-12115,hsa-miR-5011-5p,hsa-miR-548az-5p,mmu-miR-140-5p,hsa-miR-6715b-5p,hsa-miR-660-3p,hsa-miR-3617-3p,hsa-miR-1266-3p,hsa-miR-639,hsa-miR-10525-3p,hsa-miR-598-3p,hsa-miR-4483,hsa-miR-4694-3p,hsa-miR-548p,hsa-miR-365b-3p,hsa-mir-513c,hsa-mir-4423,hsa-miR-1299,hsa-mir-4324,hsa-miR-2113",
+    mRNA: "LRRC24,CTSC,UBE2K,NDUFB1,PCTP,TLCD5,FHL3,GALNT16,IGF2R,VILL,CDT1,NRARP,APMAP,ZNF532,SYNM,SMG7,KDM8,HLA-DMA,TNP2,ST3GAL4,ZNF544,ACSL6,RRP1B,STX4,HPX,C2CD2L,OSCP1,PAFAH1B3,GALNS,SPDYE14",
+    lncRNA: "NONHSAG043011,AC092279.1,AC139099.1,RP11-108M9.3,AL645939.2,AC022075.2,NONHSAG054710,LINC01630,AC093515.1,NONHSAG043672,AC113383.1,RP11-274H2.5,RP1-261D10.2,AC021242.3,AL137782.1,LOC440461,GS1-124K5.4,RP11-539L10.3,NONHSAG011425,NONHSAG026847,AP001055.6,RP11-56D16.8,LINC01296,MIR22HG,Z95704.3,NONHSAG036097,AC090607.5,AC016907.3,SNAP47-IT1,AC005220.1",
+    circRNA: "",
+};
 
 const parseRnaInput = (text) => {
     return Array.from(
@@ -78,6 +85,10 @@ const RNAListUploadBox = ({ onUpload, loading = false }) => {
             ...prev,
             [type]: value,
         }));
+    };
+
+    const handleLoadDemo = () => {
+        setInputValue(demoInputValue);
     };
 
     const handleUpload = () => {
@@ -196,6 +207,14 @@ const RNAListUploadBox = ({ onUpload, loading = false }) => {
 
                     <Space>
                         <Button
+                            icon={<ExperimentOutlined />}
+                            onClick={handleLoadDemo}
+                            disabled={loading}
+                        >
+                            Demo
+                        </Button>
+
+                        <Button
                             type="primary"
                             loading={loading}
                             disabled={isEmpty || isOverLimit || loading}
@@ -204,7 +223,11 @@ const RNAListUploadBox = ({ onUpload, loading = false }) => {
                             Upload
                         </Button>
 
-                        <Button onClick={handleReset}>
+                        <Button
+                            danger
+                            onClick={handleReset}
+                            disabled={loading}
+                        >
                             Reset
                         </Button>
                     </Space>
