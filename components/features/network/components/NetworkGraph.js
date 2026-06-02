@@ -351,7 +351,14 @@ const NetworkLegend = () => (
     </Panel>
 );
 
-const NetworkControls = ({ searchStatus, onFitView, onSearchNode, onClearSearch }) => (
+const NetworkControls = ({
+    searchKeyword,
+    searchStatus,
+    onSearchKeywordChange,
+    onFitView,
+    onSearchNode,
+    onClearSearch,
+}) => (
     <div
         style={{
             position: "absolute",
@@ -363,10 +370,14 @@ const NetworkControls = ({ searchStatus, onFitView, onSearchNode, onClearSearch 
         <Space.Compact>
             <Input.Search
                 allowClear
+                value={searchKeyword}
                 status={searchStatus}
                 size="small"
                 placeholder="Search RNA..."
                 enterButton={<SearchOutlined />}
+                onChange={(e) => {
+                    onSearchKeywordChange(e.target.value);
+                }}
                 onSearch={onSearchNode}
                 style={{ width: 220 }}
             />
@@ -451,7 +462,9 @@ const NetworkSummary = ({ networkData }) => {
 };
 
 const NetworkGraph = ({ networkData }) => {
+    const [searchKeyword, setSearchKeyword] = useState("");
     const [searchStatus, setSearchStatus] = useState();
+
     const cyRef = useRef(null);
     const tooltipRef = useRef(null);
     const mousePositionRef = useRef({ x: 0, y: 0 });
@@ -541,6 +554,17 @@ const NetworkGraph = ({ networkData }) => {
         cy.on("drag pan zoom resize", () => {
             destroyTooltip();
         });
+
+        cy.off("dbltap", "node");
+
+        cy.on("dbltap", "node", (event) => {
+            const node = event.target;
+            const label = node.data("label");
+
+            if (!label) return;
+
+            handleSearchNode(label);
+        });
     };
 
     const clearSearchHighlight = () => {
@@ -552,12 +576,16 @@ const NetworkGraph = ({ networkData }) => {
 
     const handleSearchNode = (keyword) => {
         const cy = cyRef.current;
-        const value = keyword.trim().toLowerCase();
+        const rawValue = keyword || "";
+        const value = rawValue.trim().toLowerCase();
+
+        setSearchKeyword(rawValue);
 
         destroyTooltip();
         clearSearchHighlight();
 
         if (!cy || !value) {
+            setSearchStatus(undefined);
             return;
         }
 
@@ -571,7 +599,7 @@ const NetworkGraph = ({ networkData }) => {
 
             message.destroy();
             message.warning({
-                content: `No RNA node found for "${keyword}".`,
+                content: `No RNA node found for "${rawValue}".`,
                 duration: 2,
             });
 
@@ -592,6 +620,9 @@ const NetworkGraph = ({ networkData }) => {
     };
 
     const handleClearSearch = () => {
+        setSearchKeyword("");
+        setSearchStatus(undefined);
+
         destroyTooltip();
         clearSearchHighlight();
         cyRef.current?.fit(undefined, 40);
@@ -613,7 +644,12 @@ const NetworkGraph = ({ networkData }) => {
         >
             <NetworkLegend />
             <NetworkControls
+                searchKeyword={searchKeyword}
                 searchStatus={searchStatus}
+                onSearchKeywordChange={(value) => {
+                    setSearchKeyword(value);
+                    setSearchStatus(undefined);
+                }}
                 onFitView={handleFitView}
                 onSearchNode={handleSearchNode}
                 onClearSearch={handleClearSearch}
