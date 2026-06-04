@@ -465,6 +465,7 @@ const NetworkGraph = ({ networkData }) => {
     const [searchKeyword, setSearchKeyword] = useState("");
     const [searchStatus, setSearchStatus] = useState();
 
+    const searchKeywordRef = useRef("");
     const cyRef = useRef(null);
     const tooltipRef = useRef(null);
     const mousePositionRef = useRef({ x: 0, y: 0 });
@@ -563,6 +564,14 @@ const NetworkGraph = ({ networkData }) => {
 
             if (!label) return;
 
+            const currentKeyword = searchKeywordRef.current.trim().toLowerCase();
+            const currentLabel = label.trim().toLowerCase();
+
+            if (currentKeyword === currentLabel) {
+                handleClearSearch();
+                return;
+            }
+
             handleSearchNode(label);
         });
     };
@@ -574,12 +583,19 @@ const NetworkGraph = ({ networkData }) => {
         cy.elements().removeClass("dimmed search-match search-neighbor");
     };
 
+    const handleSearchKeywordChange = (value) => {
+        setSearchKeyword(value);
+        searchKeywordRef.current = value;
+        setSearchStatus(undefined);
+    };
+
     const handleSearchNode = (keyword) => {
         const cy = cyRef.current;
         const rawValue = keyword || "";
         const value = rawValue.trim().toLowerCase();
 
         setSearchKeyword(rawValue);
+        searchKeywordRef.current = rawValue;
 
         destroyTooltip();
         clearSearchHighlight();
@@ -621,6 +637,7 @@ const NetworkGraph = ({ networkData }) => {
 
     const handleClearSearch = () => {
         setSearchKeyword("");
+        searchKeywordRef.current = "";
         setSearchStatus(undefined);
 
         destroyTooltip();
@@ -635,26 +652,24 @@ const NetworkGraph = ({ networkData }) => {
             style={{
                 position: "relative",
                 width: "100%",
-                height: 600,
+                height: "75vh",
+                minHeight: 720,
                 border: "1px solid #f0f0f0",
                 borderRadius: 8,
                 overflow: "hidden",
                 background: "#ffffff",
             }}
         >
-            <NetworkLegend />
+            <NetworkLegend/>
             <NetworkControls
                 searchKeyword={searchKeyword}
                 searchStatus={searchStatus}
-                onSearchKeywordChange={(value) => {
-                    setSearchKeyword(value);
-                    setSearchStatus(undefined);
-                }}
+                onSearchKeywordChange={handleSearchKeywordChange}
                 onFitView={handleFitView}
                 onSearchNode={handleSearchNode}
                 onClearSearch={handleClearSearch}
             />
-            <NetworkSummary networkData={networkData} />
+            <NetworkSummary networkData={networkData}/>
 
             <CytoscapeComponent
                 elements={elements}
@@ -691,7 +706,7 @@ const NetworkGraph = ({ networkData }) => {
 
                     tile: true,
                 }}
-                wheelSensitivity={0.2}
+                wheelSensitivity={1}
                 cy={handleCyReady}
             />
         </div>
