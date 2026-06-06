@@ -11,6 +11,7 @@ import EmptyView from "@/components/common/status/EmptyView"
 import { getCeRNAAxisNetworkQueryURL } from "@/lib/api/network"
 import api from "@/lib/api/axios"
 import { Box, Stack } from "@mui/system"
+import BasicChip from "@/components/ui/chips/BasicChip"
 
 const NetworkWrapper = ({}) => {
     const [networkData, setNetworkData] = useState(null);
@@ -50,28 +51,49 @@ const NetworkWrapper = ({}) => {
 
     return (
         <Stack spacing={4}>
-            <Box
-                component='h6'
-                sx={{ fontSize: '40px' }}
+            <Stack
+                direction="row"
+                spacing={2}
+                alignItems="center"
             >
-                ceRNA Axis Custom List Query
-            </Box>
-            <Space direction="vertical" size={24} style={{ width: "100%" }}>
-                <RNAListUploadBox onUpload={handleUpload} loading={loading}/>
-                {
-                    error && <ErrorView height={600}/>
-                }
+                <Box
+                    component="h6"
+                    sx={{
+                        fontSize: "40px",
+                        m: 0,
+                    }}
+                >
+                    ceRNA Axis Custom List Query
+                </Box>
 
-                {
-                    loading && <LoadingView height={600}/>
-                }
+                <BasicChip
+                    value="Mode 1"
+                    color="blue"
+                    style={{
+                        height: "32px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "0 12px",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        marginTop: "10px",
+                    }}
+                />
+            </Stack>
+
+            <Space direction="vertical" size={24} style={{ width: "100%" }}>
+                <RNAListUploadBox onUpload={handleUpload} loading={loading} />
+
+                {error && <ErrorView height={600} />}
+
+                {loading && <LoadingView height={600} />}
 
                 {!loading && networkData && (
-                    <NetworkGraph networkData={networkData}/>
+                    <NetworkGraph networkData={networkData} />
                 )}
 
                 {!loading && !networkData && !error && (
-                    <EmptyView height={600} description="Submit RNA lists to generate a network."/>
+                    <EmptyView height={600} description="Submit RNA lists to generate a network." />
                 )}
             </Space>
         </Stack>
