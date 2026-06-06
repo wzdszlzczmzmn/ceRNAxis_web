@@ -10,6 +10,7 @@ import LoadingView from "@/components/common/status/LoadingView"
 import EmptyView from "@/components/common/status/EmptyView"
 import { getCeRNAAxisNetworkQueryURL } from "@/lib/api/network"
 import api from "@/lib/api/axios"
+import { Box, Stack } from "@mui/system"
 
 const NetworkWrapper = ({}) => {
     const [networkData, setNetworkData] = useState(null);
@@ -48,24 +49,32 @@ const NetworkWrapper = ({}) => {
     };
 
     return (
-        <Space direction="vertical" size={24} style={{ width: "100%" }}>
-            <RNAListUploadBox onUpload={handleUpload} loading={loading}/>
-            {
-                error && <ErrorView height={600}/>
-            }
+        <Stack spacing={4}>
+            <Box
+                component='h6'
+                sx={{ fontSize: '40px' }}
+            >
+                ceRNA Axis Custom List Query
+            </Box>
+            <Space direction="vertical" size={24} style={{ width: "100%" }}>
+                <RNAListUploadBox onUpload={handleUpload} loading={loading}/>
+                {
+                    error && <ErrorView height={600}/>
+                }
 
-            {
-                loading && <LoadingView height={600}/>
-            }
+                {
+                    loading && <LoadingView height={600}/>
+                }
 
-            {!loading && networkData && (
-                <NetworkGraph networkData={networkData} />
-            )}
+                {!loading && networkData && (
+                    <NetworkGraph networkData={networkData}/>
+                )}
 
-            {!loading && !networkData && !error && (
-                <EmptyView height={600} description="Submit RNA lists to generate a network."/>
-            )}
-        </Space>
+                {!loading && !networkData && !error && (
+                    <EmptyView height={600} description="Submit RNA lists to generate a network."/>
+                )}
+            </Space>
+        </Stack>
     )
 }
 

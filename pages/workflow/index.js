@@ -1,15 +1,66 @@
 import { Box, Stack } from "@mui/system"
+import { useState } from "react"
+import NetworkWrapper from "@/components/features/network/components/NetworkWrapper"
+import { ConfigProvider, Menu } from "antd"
+
+const customTheme = {
+    components: {
+        Menu: {
+            itemHeight: 48,
+            itemPaddingInline: 20,
+            fontSize: 16
+        }
+    }
+}
+
+const menuItems = [
+    {
+        key: 'mode1',
+        label: 'ceRNA Axis Custom List Query'
+    }
+]
 
 const Workflow = ({}) => {
+    const [selectedKey, setSelectedKey] = useState('mode1')
+
+    const renderContent = () => {
+        switch (selectedKey) {
+            case 'mode1':
+                return <NetworkWrapper/>
+            default:
+                return null
+        }
+    }
+
     return (
-        <Stack spacing={4} sx={{ marginTop: '24px' }}>
+        <Box
+            sx={{
+                display: 'flex',
+                minHeight: 'calc(100vh - 148px)'
+            }}
+        >
             <Box
-                component='h6'
-                sx={{ fontSize: '40px' }}
+                sx={{
+                    pt: '12px',
+                    width: 350,
+                    borderRight: '1px solid #e5e5e5'
+                }}
             >
-                Workflow Page
+                <ConfigProvider theme={customTheme}>
+                    <Menu
+                        mode="inline"
+                        selectedKeys={[selectedKey]}
+                        onClick={({ key }) => setSelectedKey(key)}
+                        style={{ borderRight: 'none' }}
+                        items={menuItems}
+                    />
+                </ConfigProvider>
             </Box>
-        </Stack>
+
+            <Box flex={1} p={3} overflow="auto">
+                {renderContent()}
+            </Box>
+        </Box>
     )
 }
 

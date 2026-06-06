@@ -79,17 +79,31 @@ const menuItems = [
         icon: <DatabaseIcon style={{ fontSize: '20px' }}/>,
         children: [
             {
+                key: 'mRNA',
+                label: 'mRNA Datasets',
+                link: '/database/datasetMetaTable?gene_bio_type=mRNA'
+            },
+            {
+                key: 'miRNA',
+                label: 'miRNA Datasets',
+                link: '/database/datasetMetaTable?gene_bio_type=miRNA'
+            },
+            {
+                key: 'lncRNA',
+                label: 'lncRNA Datasets',
+                link: '/database/datasetMetaTable?gene_bio_type=lncRNA'
+            },
+            {
+                key: 'circRNA',
+                label: 'circRNA Datasets',
+                link: '/database/datasetMetaTable?gene_bio_type=circRNA'
+            },
+            {
                 key: 'ceRNA Axis',
                 label: 'ceRNA Axis',
                 link: '/database/ceRNAAxis'
             },
         ]
-    },
-    {
-        key: 'network',
-        label: 'Network',
-        icon: <DeploymentUnitOutlined style={{ fontSize: '20px' }}/>,
-        link: '/network'
     },
     {
         key: 'analysis',
