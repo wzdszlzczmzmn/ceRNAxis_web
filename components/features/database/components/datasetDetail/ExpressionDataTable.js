@@ -13,20 +13,10 @@ import ExpressionGeneInput from "./ExpressionGeneInput"
 import AvailableGeneModal from "@/components/features/database/components/datasetDetail/AvailableGeneModal"
 import { DatabaseOutlined } from "@ant-design/icons"
 
-const DEFAULT_PREFERRED_GENES = ["TP53", "BRCA1", "BRCA2", "EGFR", "MYC"]
+const DEFAULT_SELECTED_GENE_COUNT = 5
 
 const getDefaultSelectedGenes = (genes) => {
-    const geneSet = new Set(genes)
-
-    const preferredGenes = DEFAULT_PREFERRED_GENES.filter(gene =>
-        geneSet.has(gene)
-    )
-
-    if (preferredGenes.length > 0) {
-        return preferredGenes.slice(0, 5)
-    }
-
-    return genes.slice(0, 5)
+    return genes.slice(0, DEFAULT_SELECTED_GENE_COUNT)
 }
 
 const isEmptyValue = (value) => {
@@ -59,7 +49,7 @@ const buildExpressionColumns = (columns) => {
                 fixed: "left",
                 align: "center",
                 sorter: stringSorter(column),
-                render: value => <BasicChip value={value} color="volcano" />,
+                render: value => <BasicChip value={value} color="volcano"/>,
             }
         }
 
@@ -77,7 +67,61 @@ const buildExpressionColumns = (columns) => {
     })
 }
 
-const ExpressionDataTable = ({ dataset, expressionType }) => {
+const ExpressionDataLayout = ({
+    expressionType,
+    geneCount,
+    showActions = false,
+    onBrowseGenes,
+    children,
+}) => {
+    return (
+        <Stack spacing={3}>
+            <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{
+                    borderBottom: "2px solid #e0e0e0",
+                    pb: "12px",
+                }}
+            >
+                <Box component="h6" sx={{ fontSize: "36px", fontWeight: 700, m: 0 }}>
+                    {expressionType} Expression
+                </Box>
+
+                {showActions && (
+                    <Stack direction="row" spacing={2}>
+                        <BasicChip
+                            value={`${geneCount.toLocaleString()} Genes Available`}
+                            color="blue"
+                            style={{
+                                height: "36px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: "0 14px",
+                                fontSize: "14px",
+                                fontWeight: 500,
+                            }}
+                        />
+
+                        <Button
+                            type="primary"
+                            icon={<DatabaseOutlined />}
+                            onClick={onBrowseGenes}
+                        >
+                            Browse Genes
+                        </Button>
+                    </Stack>
+                )}
+            </Stack>
+
+            {children}
+        </Stack>
+    )
+}
+
+const ExpressionDataTable = ({ dataset, rnaType, expressionType }) => {
     const [selectedGenes, setSelectedGenes] = useState([])
     const [isGeneModalOpen, setIsGeneModalOpen] = useState(false)
 
@@ -86,11 +130,11 @@ const ExpressionDataTable = ({ dataset, expressionType }) => {
         count: geneCount,
         isLoading: isGeneLoading,
         isError: isGeneError,
-    } = useExpressionGeneList(dataset, expressionType)
+    } = useExpressionGeneList(dataset, rnaType, expressionType)
 
     useEffect(() => {
         setSelectedGenes([])
-    }, [dataset, expressionType])
+    }, [dataset, rnaType, expressionType])
 
     useEffect(() => {
         if (genes.length > 0 && selectedGenes.length === 0) {
@@ -115,60 +159,40 @@ const ExpressionDataTable = ({ dataset, expressionType }) => {
     }, [columns])
 
     if (isGeneLoading) {
-        return <LoadingView containerSx={{ height: "40vh", marginTop: "40px" }} />
+        return (
+            <ExpressionDataLayout expressionType={expressionType}>
+                <LoadingView containerSx={{ height: "420px" }} />
+            </ExpressionDataLayout>
+        )
     }
 
     if (isGeneError) {
-        return <ErrorView containerSx={{ height: "40vh", marginTop: "40px" }} />
+        return (
+            <ExpressionDataLayout expressionType={expressionType}>
+                <ErrorView containerSx={{ height: "420px" }} />
+            </ExpressionDataLayout>
+        )
     }
 
     if (!genes.length) {
-        return <EmptyView containerSx={{ height: "40vh", marginTop: "40px" }} />
+        return (
+            <ExpressionDataLayout expressionType={expressionType}>
+                <EmptyView
+                    bordered
+                    description={`No ${expressionType} RNA Expression Data`}
+                    containerSx={{ height: "420px" }}
+                />
+            </ExpressionDataLayout>
+        )
     }
 
     return (
-        <Stack spacing={3}>
-            <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{
-                    borderBottom: "2px solid #e0e0e0",
-                    pb: "12px",
-                }}
-            >
-                <Box component="h6" sx={{ fontSize: "36px", fontWeight: 700, m: 0 }}>
-                    {expressionType} Expression
-                </Box>
-
-                <Stack direction="row" spacing={2}>
-                    <BasicChip
-                        value={`${geneCount.toLocaleString()} Genes Available`}
-                        color="blue"
-                        style={{
-                            height: "36px",
-
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-
-                            padding: "0 14px",
-
-                            fontSize: "14px",
-                            fontWeight: 500,
-                        }}
-                    />
-
-                    <Button
-                        type="primary"
-                        icon={<DatabaseOutlined />}
-                        onClick={() => setIsGeneModalOpen(true)}
-                    >
-                        Browse Genes
-                    </Button>
-                </Stack>
-            </Stack>
-
+        <ExpressionDataLayout
+            expressionType={expressionType}
+            geneCount={geneCount}
+            showActions
+            onBrowseGenes={() => setIsGeneModalOpen(true)}
+        >
             <AvailableGeneModal
                 open={isGeneModalOpen}
                 onClose={() => setIsGeneModalOpen(false)}
@@ -184,7 +208,7 @@ const ExpressionDataTable = ({ dataset, expressionType }) => {
             />
 
             {isExpressionError ? (
-                <ErrorView containerSx={{ height: "30vh", marginTop: "20px" }} />
+                <ErrorView containerSx={{ height: "30vh" }} />
             ) : (
                 <StyledTable
                     loading={isExpressionLoading}
@@ -203,7 +227,7 @@ const ExpressionDataTable = ({ dataset, expressionType }) => {
                     }}
                 />
             )}
-        </Stack>
+        </ExpressionDataLayout>
     )
 }
 

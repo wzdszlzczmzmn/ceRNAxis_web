@@ -9,7 +9,14 @@ const DatasetDetailPage = ({}) => {
     const router = useRouter()
     const { dataset } = router.query
 
-    const { metadata, availableExpressionTypes, isLoading, isError, mutate } = useDatasetDetail(dataset)
+    const {
+        metadata,
+        availableExpressionTypes,
+        availableDegExpressionTypes,
+        isLoading,
+        isError,
+        mutate
+    } = useDatasetDetail(dataset)
 
     if (!router.isReady || isLoading) return <LoadingView containerSx={{ height: '80vh', marginTop: '40px' }}/>
 
@@ -18,13 +25,14 @@ const DatasetDetailPage = ({}) => {
     return (
         <>
             <Head>
-                <title>{dataset} | CNAScope</title>
+                <title>{dataset} | ceRNAxis</title>
                 <meta name="description" content={`Details of dataset ${dataset}`}/>
             </Head>
             <DatasetDetailContent
                 dataset={dataset}
                 metadata={metadata}
                 availableExpressionTypes={availableExpressionTypes}
+                availableDegExpressionTypes={availableDegExpressionTypes}
             />
         </>
     )

@@ -3,6 +3,7 @@ import ExpressionDataTable from "./ExpressionDataTable"
 
 const ExpressionDataSection = ({
     dataset,
+    rnaType,
     availableExpressionTypes = [],
 }) => {
     if (!dataset || availableExpressionTypes.length === 0) {
@@ -15,6 +16,7 @@ const ExpressionDataSection = ({
                 <ExpressionDataTable
                     key={expressionType}
                     dataset={dataset}
+                    rnaType={rnaType}
                     expressionType={expressionType}
                 />
             ))}

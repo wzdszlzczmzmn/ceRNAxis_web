@@ -12,8 +12,8 @@ const ContactInfo = () => (
             </Box>
             <Stack direction="row" spacing={1} sx={{ fontSize: '16px', alignItems: 'center' }}>
                 <EnvironmentOutlined/>
-                <Box component='span'>Address: 1B-109, 1/F, Block 1, To Yuen Building, Tat Chee Avenue, Kowloon, Hong
-                    Kong, China</Box>
+                <Box component='span'>Room 10-404, 10/F, Jockey Club One Health Tower, 83 Tat Chee Avenue, City
+                    University of Hong Kong, Kowloon Tong, Kowloon, Hong Kong</Box>
             </Stack>
             <Stack direction="row" spacing={1} sx={{ fontSize: '16px', alignItems: 'center' }}>
                 <MailOutlined/>

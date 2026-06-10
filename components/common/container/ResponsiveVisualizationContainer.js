@@ -12,26 +12,37 @@ const ResponsiveVisualizationContainer = ({ containerSx, children }) => {
     useEffect(() => {
         const observeTarget = containerRef.current
 
-        const resizeObserver = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                const { width, height } = entry.contentRect
-                setSize({ width, height })
-            }
-        })
-
-        if (observeTarget) {
-            resizeObserver.observe(observeTarget)
+        if (!observeTarget || typeof ResizeObserver === "undefined") {
+            return
         }
 
+        const resizeObserver = new ResizeObserver(entries => {
+            const entry = entries[0]
+            if (!entry) return
+
+            const { width, height } = entry.contentRect
+
+            setSize(prev => {
+                if (prev.width === width && prev.height === height) {
+                    return prev
+                }
+
+                return { width, height }
+            })
+        })
+
+        resizeObserver.observe(observeTarget)
+
         return () => {
-            if (observeTarget) {
-                resizeObserver.unobserve(observeTarget)
-            }
+            resizeObserver.disconnect()
         }
     }, [])
 
     return (
-        <Box ref={containerRef} sx={{ width: '100%', ...containerSx }}>
+        <Box
+            ref={containerRef}
+            sx={{ width: "100%", height: "100%", ...containerSx }}
+        >
             <ResponsiveSizeContext.Provider value={size}>
                 {children}
             </ResponsiveSizeContext.Provider>

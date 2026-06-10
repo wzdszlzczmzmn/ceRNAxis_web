@@ -79,29 +79,43 @@ const menuItems = [
         icon: <DatabaseIcon style={{ fontSize: '20px' }}/>,
         children: [
             {
-                key: 'mRNA',
-                label: 'mRNA Datasets',
-                link: '/database/datasetMetaTable?gene_bio_type=mRNA'
+                key: 'g1',
+                label: 'Expression Dataset',
+                type: 'group',
+                children: [
+                    {
+                        key: 'mRNA',
+                        label: 'mRNA Datasets',
+                        link: '/database/datasetMetaTable?gene_bio_type=mRNA'
+                    },
+                    {
+                        key: 'miRNA',
+                        label: 'miRNA Datasets',
+                        link: '/database/datasetMetaTable?gene_bio_type=miRNA'
+                    },
+                    {
+                        key: 'lncRNA',
+                        label: 'lncRNA Datasets',
+                        link: '/database/datasetMetaTable?gene_bio_type=lncRNA'
+                    },
+                    {
+                        key: 'circRNA',
+                        label: 'circRNA Datasets',
+                        link: '/database/datasetMetaTable?gene_bio_type=circRNA'
+                    },
+                ]
             },
             {
-                key: 'miRNA',
-                label: 'miRNA Datasets',
-                link: '/database/datasetMetaTable?gene_bio_type=miRNA'
-            },
-            {
-                key: 'lncRNA',
-                label: 'lncRNA Datasets',
-                link: '/database/datasetMetaTable?gene_bio_type=lncRNA'
-            },
-            {
-                key: 'circRNA',
-                label: 'circRNA Datasets',
-                link: '/database/datasetMetaTable?gene_bio_type=circRNA'
-            },
-            {
-                key: 'ceRNA Axis',
-                label: 'ceRNA Axis',
-                link: '/database/ceRNAAxis'
+                key: 'g2',
+                label: 'Interaction Network',
+                type: 'group',
+                children: [
+                    {
+                        key: 'ceRNA Axis',
+                        label: 'ceRNA Axis',
+                        link: '/database/ceRNAAxis'
+                    }
+                ]
             },
         ]
     },
