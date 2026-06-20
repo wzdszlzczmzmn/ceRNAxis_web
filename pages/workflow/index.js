@@ -1,7 +1,8 @@
 import { Box, Stack } from "@mui/system"
 import { useState } from "react"
-import NetworkWrapper from "@/components/features/network/components/NetworkWrapper"
+import NetworkWrapper from "@/components/features/workflow/components/module1/NetworkWrapper"
 import { ConfigProvider, Menu } from "antd"
+import PairedCohortModeWrapper from "@/components/features/workflow/components/module2/PairedCohortModeWrapper"
 
 const customTheme = {
     components: {
@@ -17,6 +18,10 @@ const menuItems = [
     {
         key: 'mode1',
         label: 'ceRNA Axis Custom List Query'
+    },
+    {
+        key: 'mode2',
+        label: 'Paired Cohort Mode'
     }
 ]
 
@@ -27,6 +32,8 @@ const Workflow = ({}) => {
         switch (selectedKey) {
             case 'mode1':
                 return <NetworkWrapper/>
+            case 'mode2':
+                return <PairedCohortModeWrapper/>
             default:
                 return null
         }

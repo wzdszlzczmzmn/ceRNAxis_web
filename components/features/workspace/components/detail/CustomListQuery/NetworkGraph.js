@@ -17,6 +17,35 @@ const CytoscapeComponent = dynamic(
     { ssr: false }
 );
 
+const TYPE_LABEL_MAP = {
+    miRNA: "miRNA",
+    mRNA: "mRNA",
+    lncRNA: "lncRNA",
+    circRNA: "circRNA",
+    immune_checkpoint_gene: "Immune Checkpoint Gene",
+    unknown: "Unknown",
+};
+
+const EDGE_TYPE_LABEL_MAP = {
+    rna_interaction: "RNA Interaction",
+    immune_annotation: "Immune Annotation",
+};
+
+const getTypeLabel = (type) => {
+    return TYPE_LABEL_MAP[type] || type || "N/A";
+};
+
+const getEdgeTypeLabel = (type) => {
+    return EDGE_TYPE_LABEL_MAP[type] || getTypeLabel(type);
+};
+
+const getImmuneNodeTypeLabel = (type) => {
+    if (type === "immune_source_miRNA") return "Immune Source miRNA";
+    if (type === "immune_checkpoint_gene") return "Immune Checkpoint Gene";
+
+    return type || "N/A";
+};
+
 const RNA_TYPE_COLORS = {
     miRNA: "#ff7875",
     mRNA: "#69b1ff",
@@ -24,6 +53,14 @@ const RNA_TYPE_COLORS = {
     circRNA: "#b37feb",
     unknown: "#d9d9d9",
 };
+
+const RNA_LEGEND_TYPES = ["miRNA", "mRNA", "lncRNA", "circRNA"];
+
+const IMMUNE_CHECKPOINT_GENE_COLOR = "#fff1b8";
+
+const IMMUNE_BORDER_COLOR = "#13c2c2";
+const IMMUNE_EDGE_COLOR = "#13c2c2";
+const IMMUNE_UNDERLAY_COLOR = "#e6fffb";
 
 const INTERACTION_TYPES = [
     {
@@ -46,16 +83,45 @@ const INTERACTION_TYPES = [
     },
 ];
 
+const normalizeElementId = (value) => {
+    if (value === null || value === undefined) return "";
+
+    return String(value);
+};
+
 const getNodeId = (node) => {
     if (node.id !== null && node.id !== undefined) {
-        return `node:${node.id}`;
+        return normalizeElementId(node.id);
+    }
+
+    if (node.db_id !== null && node.db_id !== undefined) {
+        return `node:${node.db_id}`;
     }
 
     return `seed:${node.name}`;
 };
 
-const getEdgeClass = (interactionType) => {
-    switch (interactionType) {
+const getEdgeId = (edge) => {
+    if (edge.id !== null && edge.id !== undefined) {
+        return normalizeElementId(edge.id);
+    }
+
+    return [
+        "edge",
+        edge.source,
+        edge.target,
+        edge.type || edge.edge_type || "unknown",
+    ].join(":");
+};
+
+const getEdgeClass = (edge) => {
+    const edgeType = edge.edge_type || edge.type;
+
+    if (edgeType === "immune_annotation") {
+        return "immune-annotation immune-related";
+    }
+
+    switch (edge.type) {
         case "miRNA-mRNA":
             return "mirna-mrna";
         case "miRNA-lncRNA":
@@ -73,39 +139,102 @@ const buildElements = (networkData) => {
 
     const nodeIdSet = new Set(nodes.map(getNodeId));
 
-    const cytoscapeNodes = nodes.map(node => ({
-        data: {
-            id: getNodeId(node),
-            label: node.name,
-            type: node.type || "unknown",
-            species: node.species || "",
-            inDatabase: node.in_database ? "true" : "false",
-            isSeed: node.is_seed ? "true" : "false",
-        },
-        classes: node.type || "unknown",
-    }));
+    const cytoscapeNodes = nodes.map(node => {
+        const nodeId = getNodeId(node);
+        const nodeType = node.type || "unknown";
+        const isImmuneRelated = Boolean(node.is_immune_related);
+        const immuneNodeType = node.immune_node_type || "";
 
-    const cytoscapeEdges = edges
-        .filter(edge =>
-            edge.source &&
-            edge.target &&
-            nodeIdSet.has(edge.source) &&
-            nodeIdSet.has(edge.target)
-        )
-        .map(edge => ({
+        return {
             data: {
-                id: `edge:${edge.id}`,
-                source: edge.source,
-                target: edge.target,
-                sourceName: edge.source_name || "",
-                targetName: edge.target_name || "",
-                interactionType: edge.type || "",
-                databases: Array.isArray(edge.databases)
-                    ? edge.databases.join(", ")
+                id: nodeId,
+                label: node.name,
+                type: nodeType,
+                typeLabel: getTypeLabel(nodeType),
+                species: node.species || "",
+                source: node.source || "",
+                matchedInDatabase: node.matched_in_database ? "true" : "false",
+                isImmuneRelated: isImmuneRelated ? "true" : "false",
+                immuneNodeType,
+                immuneNodeTypeLabel: getImmuneNodeTypeLabel(immuneNodeType),
+                immunePathways: Array.isArray(node.immune_pathways)
+                    ? node.immune_pathways.join(", ")
                     : "",
             },
-            classes: getEdgeClass(edge.type),
-        }));
+            classes: [
+                nodeType,
+                isImmuneRelated ? "immune-related" : "",
+                immuneNodeType,
+            ]
+                .filter(Boolean)
+                .join(" "),
+        };
+    });
+
+    const droppedEdges = [];
+
+    const cytoscapeEdges = edges
+        .filter(edge => {
+            const source = normalizeElementId(edge.source);
+            const target = normalizeElementId(edge.target);
+
+            const isValid =
+                source &&
+                target &&
+                nodeIdSet.has(source) &&
+                nodeIdSet.has(target);
+
+            if (!isValid) {
+                droppedEdges.push({
+                    id: edge.id,
+                    source,
+                    target,
+                    sourceExists: nodeIdSet.has(source),
+                    targetExists: nodeIdSet.has(target),
+                    sourceName: edge.source_name,
+                    targetName: edge.target_name,
+                    edgeType: edge.edge_type,
+                });
+            }
+
+            return isValid;
+        })
+        .map(edge => {
+            const evidenceItems = edge.immune_annotation?.evidence_items ?? [];
+            const isImmuneRelated = Boolean(edge.is_immune_related);
+
+            return {
+                data: {
+                    id: getEdgeId(edge),
+                    source: normalizeElementId(edge.source),
+                    target: normalizeElementId(edge.target),
+                    sourceName: edge.source_name || "",
+                    targetName: edge.target_name || "",
+                    sourceType: edge.source_type || "",
+                    targetType: edge.target_type || "",
+                    sourceTypeLabel: getTypeLabel(edge.source_type),
+                    targetTypeLabel: getTypeLabel(edge.target_type),
+                    interactionType: edge.type || "",
+                    interactionTypeLabel: getEdgeTypeLabel(edge.type),
+                    edgeType: edge.edge_type || "",
+                    edgeTypeLabel: getEdgeTypeLabel(edge.edge_type),
+                    databases: Array.isArray(edge.databases)
+                        ? edge.databases.join(", ")
+                        : "",
+                    isImmuneRelated: isImmuneRelated ? "true" : "false",
+                    immuneEvidenceCount: edge.immune_annotation?.evidence_count ?? 0,
+                    immunePathways: evidenceItems
+                        .map(item => item.pathway)
+                        .filter(Boolean)
+                        .join(", "),
+                    immuneEvidence: evidenceItems
+                        .map(item => item.evidence)
+                        .filter(Boolean)
+                        .join(", "),
+                },
+                classes: getEdgeClass(edge),
+            };
+        });
 
     return [...cytoscapeNodes, ...cytoscapeEdges];
 };
@@ -117,20 +246,43 @@ const createTooltipContent = (ele) => {
         return `
             <div style="font-size: 12px; line-height: 1.7;">
                 <div><strong>Name:</strong> ${data.label || "N/A"}</div>
-                <div><strong>Type:</strong> ${data.type || "N/A"}</div>
+                <div><strong>Type:</strong> ${data.typeLabel || getTypeLabel(data.type)}</div>
                 <div><strong>Species:</strong> ${data.species || "N/A"}</div>
+                <div><strong>Source:</strong> ${data.source || "N/A"}</div>
+                ${
+            data.isImmuneRelated === "true"
+                ? `
+                            <div><strong>Immune related:</strong> Yes</div>
+                            <div><strong>Immune node type:</strong> ${data.immuneNodeTypeLabel || getImmuneNodeTypeLabel(data.immuneNodeType)}</div>
+                            <div><strong>Immune pathways:</strong> ${data.immunePathways || "N/A"}</div>
+                        `
+                : ""
+        }
             </div>
         `;
     }
 
     return `
-        <div style="font-size: 12px; line-height: 1.7;">
-            <div><strong>Source:</strong> ${data.sourceName || data.source || "N/A"}</div>
-            <div><strong>Target:</strong> ${data.targetName || data.target || "N/A"}</div>
-            <div><strong>Type:</strong> ${data.interactionType || "N/A"}</div>
-            <div><strong>Databases:</strong> ${data.databases || "N/A"}</div>
-        </div>
-    `;
+    <div style="font-size: 12px; line-height: 1.7;">
+        <div><strong>Source:</strong> ${data.sourceName || data.source || "N/A"}</div>
+        <div><strong>Target:</strong> ${data.targetName || data.target || "N/A"}</div>
+        <div><strong>Source type:</strong> ${data.sourceTypeLabel || getTypeLabel(data.sourceType)}</div>
+        <div><strong>Target type:</strong> ${data.targetTypeLabel || getTypeLabel(data.targetType)}</div>
+        <div><strong>Interaction:</strong> ${data.interactionTypeLabel || getEdgeTypeLabel(data.interactionType)}</div>
+        <div><strong>Edge type:</strong> ${data.edgeTypeLabel || getEdgeTypeLabel(data.edgeType)}</div>
+        <div><strong>Databases:</strong> ${data.databases || "N/A"}</div>
+        ${
+        data.isImmuneRelated === "true"
+            ? `
+                    <div><strong>Immune related:</strong> Yes</div>
+                    <div><strong>Evidence count:</strong> ${data.immuneEvidenceCount || 0}</div>
+                    <div><strong>Pathways:</strong> ${data.immunePathways || "N/A"}</div>
+                    <div><strong>Evidence:</strong> ${data.immuneEvidence || "N/A"}</div>
+                `
+            : ""
+    }
+    </div>
+`;
 };
 
 const stylesheet = [
@@ -245,9 +397,56 @@ const stylesheet = [
             "z-index": 998,
         },
     },
+    {
+        selector: "node.immune-related",
+        style: {
+            "border-width": 5,
+            "border-color": IMMUNE_BORDER_COLOR,
+            "border-opacity": 1,
+            "background-blacken": -0.08,
+            "shadow-blur": 14,
+            "shadow-color": IMMUNE_BORDER_COLOR,
+            "shadow-opacity": 0.45,
+            "shadow-offset-x": 0,
+            "shadow-offset-y": 0,
+            "z-index": 900,
+        },
+    },
+    {
+        selector: "node.immune_checkpoint_gene",
+        style: {
+            "background-color": IMMUNE_CHECKPOINT_GENE_COLOR,
+            shape: "round-rectangle",
+            width: 46,
+            height: 30,
+            "border-width": 5,
+            "border-color": IMMUNE_BORDER_COLOR,
+            "border-opacity": 1,
+            "font-weight": 600,
+            "z-index": 930,
+        },
+    },
+    {
+        selector: "edge.immune-annotation",
+        style: {
+            width: 4,
+            "line-color": IMMUNE_EDGE_COLOR,
+            "line-style": "dashed",
+            "curve-style": "unbundled-bezier",
+            "control-point-distances": 60,
+            "control-point-weights": 0.5,
+            "target-arrow-shape": "triangle",
+            "target-arrow-color": IMMUNE_EDGE_COLOR,
+            "arrow-scale": 0.9,
+            "underlay-color": IMMUNE_UNDERLAY_COLOR,
+            "underlay-opacity": 0.95,
+            "underlay-padding": 5,
+            "z-index": 999,
+        },
+    },
 ];
 
-const LineLegendIcon = ({ lineStyle }) => {
+const LineLegendIcon = ({ lineStyle, color = "#8c8c8c" }) => {
     const borderStyleMap = {
         solid: "solid",
         dashed: "dashed",
@@ -259,7 +458,7 @@ const LineLegendIcon = ({ lineStyle }) => {
             style={{
                 width: 32,
                 height: 0,
-                borderTop: `2px ${borderStyleMap[lineStyle] || "solid"} #8c8c8c`,
+                borderTop: `2px ${borderStyleMap[lineStyle] || "solid"} ${color}`,
                 display: "inline-block",
             }}
         />
@@ -300,9 +499,10 @@ const NetworkLegend = () => (
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {Object.entries(RNA_TYPE_COLORS)
-                    .filter(([type]) => type !== "unknown")
-                    .map(([type, color]) => (
+                {RNA_LEGEND_TYPES.map(type => {
+                    const color = RNA_TYPE_COLORS[type];
+
+                    return (
                         <div
                             key={type}
                             style={{
@@ -311,19 +511,20 @@ const NetworkLegend = () => (
                                 gap: 8,
                             }}
                         >
-                            <span
-                                style={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: "50%",
-                                    backgroundColor: color,
-                                    display: "inline-block",
-                                    flexShrink: 0,
-                                }}
-                            />
-                            <span>{type}</span>
+            <span
+                style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    backgroundColor: color,
+                    display: "inline-block",
+                    flexShrink: 0,
+                }}
+            />
+                            <span>{getTypeLabel(type)}</span>
                         </div>
-                    ))}
+                    );
+                })}
             </div>
         </div>
 
@@ -342,10 +543,53 @@ const NetworkLegend = () => (
                             gap: 8,
                         }}
                     >
-                        <LineLegendIcon lineStyle={item.lineStyle} />
+                        <LineLegendIcon lineStyle={item.lineStyle}/>
                         <span>{item.label}</span>
                     </div>
                 ))}
+            </div>
+        </div>
+
+        <div>
+            <div style={{ fontWeight: 600, marginBottom: 8, color: "#262626" }}>
+                Immune Annotation
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span
+                style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: "50%",
+                    backgroundColor: "#ffffff",
+                    border: `3px solid ${IMMUNE_BORDER_COLOR}`,
+                    display: "inline-block",
+                    flexShrink: 0,
+                }}
+            />
+                    <span>Cyan border: immune-related node</span>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span
+                style={{
+                    width: 18,
+                    height: 12,
+                    borderRadius: 4,
+                    backgroundColor: "#fff1b8",
+                    border: `3px solid ${IMMUNE_BORDER_COLOR}`,
+                    display: "inline-block",
+                    flexShrink: 0,
+                }}
+            />
+                    <span>Annotation-only checkpoint gene</span>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <LineLegendIcon lineStyle="dashed" color={IMMUNE_EDGE_COLOR}/>
+                    <span>Immune annotation edge</span>
+                </div>
             </div>
         </div>
     </Panel>
@@ -373,8 +617,8 @@ const NetworkControls = ({
                 value={searchKeyword}
                 status={searchStatus}
                 size="small"
-                placeholder="Search RNA..."
-                enterButton={<SearchOutlined />}
+                placeholder="Search RNA / immune gene..."
+                enterButton={<SearchOutlined/>}
                 onChange={(e) => {
                     onSearchKeywordChange(e.target.value);
                 }}
@@ -384,7 +628,7 @@ const NetworkControls = ({
 
             <Button
                 size="small"
-                icon={<ClearOutlined />}
+                icon={<ClearOutlined/>}
                 onClick={onClearSearch}
             >
                 Clear
@@ -392,7 +636,7 @@ const NetworkControls = ({
 
             <Button
                 size="small"
-                icon={<AimOutlined />}
+                icon={<AimOutlined/>}
                 onClick={onFitView}
             >
                 Fit View
@@ -409,7 +653,7 @@ const NetworkSummary = ({ networkData }) => {
         0;
 
     const edgeCount =
-        networkData?.meta?.edge_count ??
+    networkData?.meta?.edge_count ??
         networkData?.meta?.total_edge_count ??
         networkData?.edges?.length ??
         0;
@@ -422,6 +666,10 @@ const NetworkSummary = ({ networkData }) => {
     const items = [
         { label: "Nodes", value: nodeCount },
         { label: "Edges", value: edgeCount },
+        {
+            label: "Immune",
+            value: networkData?.meta?.immune_annotation_edge_count ?? 0,
+        },
         { label: "Ignored", value: ignoredCount },
     ];
 
@@ -589,6 +837,48 @@ const NetworkGraph = ({ networkData }) => {
         setSearchStatus(undefined);
     };
 
+    const normalizeSearchValue = (value) => {
+        return String(value || "")
+            .trim()
+            .toLowerCase();
+    };
+
+    const getNodeSearchLabel = (node) => {
+        return String(
+            node.data("label") ||
+            node.data("name") ||
+            node.data("id") ||
+            ""
+        );
+    };
+
+    const findMatchedNodes = ({
+        cy,
+        keyword,
+    }) => {
+        const value = normalizeSearchValue(keyword);
+
+        if (!cy || !value) {
+            return cy?.collection() ?? null;
+        }
+
+        const nodes = cy.nodes();
+
+        const exactMatches = nodes.filter(node => {
+            const label = normalizeSearchValue(getNodeSearchLabel(node));
+            return label === value;
+        });
+
+        if (!exactMatches.empty()) {
+            return exactMatches;
+        }
+
+        return nodes.filter(node => {
+            const label = normalizeSearchValue(getNodeSearchLabel(node));
+            return label.includes(value);
+        });
+    };
+
     const handleSearchNode = (keyword) => {
         const cy = cyRef.current;
         const rawValue = keyword || "";
@@ -605,9 +895,9 @@ const NetworkGraph = ({ networkData }) => {
             return;
         }
 
-        const matchedNodes = cy.nodes().filter(node => {
-            const label = node.data("label") || "";
-            return label.toLowerCase().includes(value);
+        const matchedNodes = findMatchedNodes({
+            cy,
+            keyword: rawValue,
         });
 
         if (matchedNodes.empty()) {
@@ -615,7 +905,7 @@ const NetworkGraph = ({ networkData }) => {
 
             message.destroy();
             message.warning({
-                content: `No RNA node found for "${rawValue}".`,
+                content: `No node found for "${rawValue}".`,
                 duration: 2,
             });
 

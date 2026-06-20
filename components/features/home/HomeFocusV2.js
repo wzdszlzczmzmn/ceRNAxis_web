@@ -20,10 +20,10 @@ const Carousel = ({}) => {
         <div style={{ width: '80%', margin: '0 auto' }}>
             <Slider {...settings}>
                 <div>
-                    <img src="/ceRNAxis_Figure1.jpg" alt="Slide 2" style={{ width: '100%', height: 'auto' }}  />
+                    <img src="/ceRNAxis_Figure1.svg" alt="Slide 2" style={{ width: '100%', height: 'auto' }}  />
                 </div>
                 <div>
-                    <img src="/ceRNAxis_Figure2.jpg" alt="Slide 3" style={{ width: '100%', height: 'auto' }}  />
+                    <img src="/ceRNAxis_Figure2.svg" alt="Slide 3" style={{ width: '100%', height: 'auto' }}  />
                 </div>
             </Slider>
         </div>

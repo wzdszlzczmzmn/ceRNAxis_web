@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react"
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
 import { Box, Stack } from "@mui/system"
 import {
     Button,
@@ -7,13 +9,14 @@ import { Splitter } from "antd"
 import {
     MenuUnfoldOutlined,
 } from "@ant-design/icons"
+
 import LoadingView from "@/components/common/status/LoadingView"
 import ErrorView from "@/components/common/status/ErrorView"
 import EmptyView from "@/components/common/status/EmptyView"
 import VolcanoPlot from "@/components/features/visualization/components/VolcanoPlot"
-import { useDatasetDegVolcano } from "@/components/features/database/hooks/datasetDetail/useDatasetDegVolcano"
-import DatasetVolcanoControlPanel
-    from "@/components/features/database/components/datasetDetail/DatasetVolcanoControlPanel"
+import { usePairedCohortDegVolcano } from "@/components/features/workspace/hooks/usePairedCohortDegVolcano"
+import PairedCohortVolcanoControlPanel
+    from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortVolcanoControlPanel"
 
 const DEFAULT_VISUAL_CONFIG = {
     showLabels: true,
@@ -21,6 +24,21 @@ const DEFAULT_VISUAL_CONFIG = {
     pointSize: 7,
     pointOpacity: 0.8,
     plotAspectRatio: 1.3,
+}
+
+const DEFAULT_CUTOFFS = {
+    mRNA: {
+        logfc_cutoff: 1,
+        padj_cutoff: 0.05,
+    },
+    miRNA: {
+        logfc_cutoff: 1,
+        padj_cutoff: 0.05,
+    },
+    lncRNA: {
+        logfc_cutoff: 1,
+        padj_cutoff: 0.05,
+    },
 }
 
 const hasVolcanoData = data => {
@@ -45,38 +63,45 @@ const getGeneSearchOptions = data => {
     }))
 }
 
-const DatasetVolcanoAnalysisSection = ({
-    dataset,
-    availableDegExpressionTypes,
+const getCurrentCutoffs = ({
+    task,
+    rnaType,
+}) => {
+    const taskCutoffs = task?.data?.cutoffs ?? {}
+
+    return (
+        taskCutoffs[rnaType] ||
+        DEFAULT_CUTOFFS[rnaType] ||
+        {
+            logfc_cutoff: undefined,
+            padj_cutoff: undefined,
+        }
+    )
+}
+
+const PairedCohortVolcanoAnalysisSection = ({
+    task,
     height = 620,
 }) => {
+    const taskUUID = task?.data?.uuid
+
     const [queryConfig, setQueryConfig] = useState({
-        expressionType: null,
+        rnaType: "mRNA",
     })
     const [visualConfig, setVisualConfig] = useState(DEFAULT_VISUAL_CONFIG)
     const [searchGene, setSearchGene] = useState("")
     const [isControlPanelCollapsed, setIsControlPanelCollapsed] = useState(false)
 
     useEffect(() => {
-        if (!availableDegExpressionTypes?.length) {
-            setQueryConfig(prev => ({
-                ...prev,
-                expressionType: null,
-            }))
-            return
-        }
+        setSearchGene("")
+    }, [queryConfig.rnaType])
 
-        setQueryConfig(prev => {
-            if (availableDegExpressionTypes.includes(prev.expressionType)) {
-                return prev
-            }
-
-            return {
-                ...prev,
-                expressionType: availableDegExpressionTypes[0],
-            }
+    const currentCutoffs = useMemo(() => {
+        return getCurrentCutoffs({
+            task,
+            rnaType: queryConfig.rnaType,
         })
-    }, [availableDegExpressionTypes])
+    }, [task, queryConfig.rnaType])
 
     const {
         volcanoData,
@@ -84,21 +109,30 @@ const DatasetVolcanoAnalysisSection = ({
         titleSecondary,
         isLoading,
         isError,
-        mutate,
-    } = useDatasetDegVolcano({
-        dataset,
-        expressionType: queryConfig.expressionType,
+    } = usePairedCohortDegVolcano({
+        taskUUID,
+        rnaType: queryConfig.rnaType,
     })
 
     const geneSearchOptions = getGeneSearchOptions(volcanoData)
 
     const renderPlotContent = () => {
+        if (!taskUUID) {
+            return (
+                <EmptyView
+                    bordered
+                    description="Missing task UUID"
+                    containerSx={{ height: "100%" }}
+                />
+            )
+        }
+
         if (isLoading) {
-            return <LoadingView containerSx={{ height: "100%" }}/>
+            return <LoadingView containerSx={{ height: "100%" }} />
         }
 
         if (isError) {
-            return <ErrorView containerSx={{ height: "100%" }}/>
+            return <ErrorView containerSx={{ height: "100%" }} />
         }
 
         if (!hasVolcanoData(volcanoData)) {
@@ -117,8 +151,8 @@ const DatasetVolcanoAnalysisSection = ({
                 titlePrimary={titlePrimary}
                 titleSecondary={titleSecondary}
                 height="100%"
-                logfcCutoff={visualConfig.logfcCutoff}
-                padjCutoff={visualConfig.padjCutoff}
+                logfcCutoff={currentCutoffs?.logfc_cutoff}
+                padjCutoff={currentCutoffs?.padj_cutoff}
                 showLabels={visualConfig.showLabels}
                 labelTopN={visualConfig.labelTopN}
                 pointSize={visualConfig.pointSize}
@@ -143,7 +177,14 @@ const DatasetVolcanoAnalysisSection = ({
                     pb: "12px",
                 }}
             >
-                <Box component="h6" sx={{ fontSize: "36px", fontWeight: 700, m: 0 }}>
+                <Box
+                    component="h6"
+                    sx={{
+                        fontSize: "36px",
+                        fontWeight: 700,
+                        m: 0,
+                    }}
+                >
                     Expression Volcano Plot
                 </Box>
             </Stack>
@@ -165,15 +206,15 @@ const DatasetVolcanoAnalysisSection = ({
                             min={260}
                             max={500}
                         >
-                            <DatasetVolcanoControlPanel
+                            <PairedCohortVolcanoControlPanel
                                 queryConfig={queryConfig}
                                 setQueryConfig={setQueryConfig}
                                 visualConfig={visualConfig}
                                 setVisualConfig={setVisualConfig}
-                                availableDegExpressionTypes={availableDegExpressionTypes}
                                 geneSearchOptions={geneSearchOptions}
                                 searchGene={searchGene}
                                 setSearchGene={setSearchGene}
+                                currentCutoffs={currentCutoffs}
                                 onCollapse={() => setIsControlPanelCollapsed(true)}
                             />
                         </Splitter.Panel>
@@ -191,7 +232,7 @@ const DatasetVolcanoAnalysisSection = ({
                             {isControlPanelCollapsed && (
                                 <Button
                                     size="small"
-                                    icon={<MenuUnfoldOutlined/>}
+                                    icon={<MenuUnfoldOutlined />}
                                     onClick={() => setIsControlPanelCollapsed(false)}
                                     style={{
                                         position: "absolute",
@@ -213,4 +254,4 @@ const DatasetVolcanoAnalysisSection = ({
     )
 }
 
-export default DatasetVolcanoAnalysisSection
+export default PairedCohortVolcanoAnalysisSection
