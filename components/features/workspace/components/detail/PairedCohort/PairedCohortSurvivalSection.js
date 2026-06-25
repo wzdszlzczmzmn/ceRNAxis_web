@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Box, Stack } from "@mui/system";
 import { Button, Splitter } from "antd";
 import { MenuUnfoldOutlined } from "@ant-design/icons";
@@ -8,131 +8,43 @@ import { MenuUnfoldOutlined } from "@ant-design/icons";
 import LoadingView from "@/components/common/status/LoadingView";
 import ErrorView from "@/components/common/status/ErrorView";
 import EmptyView from "@/components/common/status/EmptyView";
-import Log2FCCorrelationPlot from "@/components/features/visualization/components/Log2FCCorrelationPlot";
-import { usePairedCohortLog2FCCorrelation }
-    from "@/components/features/workspace/hooks/usePairedCohortLog2FCCorrelation";
-import PairedCohortLog2FCCorrelationControlPanel
-    from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortLog2FCCorrelationControlPanel"
+import SurvivalKMPlot
+    from "@/components/features/visualization/components/SurvivalKMPlot";
+import { usePairedCohortSurvivalKM }
+    from "@/components/features/workspace/hooks/usePairedCohortSurvivalKM";
+import PairedCohortSurvivalControlPanel
+    from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortSurvivalControlPanel";
 
 const DEFAULT_VISUAL_CONFIG = {
-    pointSize: 9,
-    pointOpacitySame: 0.45,
-    pointOpacityAnti: 0.85,
+    showConfidenceInterval: true,
+    showSymbols: false,
+    lineWidth: 2.5,
 };
 
-const hasCorrelationData = data => {
-    return Array.isArray(data?.points) && data.points.length > 0;
+const hasSurvivalData = data => {
+    return Array.isArray(data?.groups) &&
+        data.groups.some(group =>
+            Array.isArray(group?.points) && group.points.length > 0
+        );
 };
 
-const getSearchOptions = data => {
-    if (!Array.isArray(data?.points)) return [];
-
-    const values = data.points
-        .flatMap(item => [item.miRNA, item.ceRNA])
-        .filter(Boolean);
-
-    return Array.from(new Set(values)).map(value => ({
-        label: value,
-        value,
-    }));
-};
-
-const FALLBACK_BACKGROUND_TYPES = [];
-
-const BACKGROUND_TYPE_LABEL_MAP = {
-    "miRNA-mRNA": "miRNA-mRNA",
-    "miRNA-lncRNA": "miRNA-lncRNA",
-    "miRNA-circRNA": "miRNA-circRNA",
-};
-
-const getAvailableBackgroundTypes = task => {
-    const availableTypes = task?.data?.available_background_types;
-
-    if (Array.isArray(availableTypes) && availableTypes.length > 0) {
-        return availableTypes;
-    }
-
-    return FALLBACK_BACKGROUND_TYPES;
-};
-
-const buildBackgroundTypeOptions = backgroundTypes => {
-    return backgroundTypes.map(typeValue => ({
-        label: BACKGROUND_TYPE_LABEL_MAP[typeValue] ?? typeValue,
-        value: typeValue,
-    }));
-};
-
-const getInitialBackgroundType = task => {
-    const availableTypes = getAvailableBackgroundTypes(task);
-
-    if (availableTypes.includes("miRNA-mRNA")) {
-        return "miRNA-mRNA";
-    }
-
-    return availableTypes[0] || null;
-};
-
-const getInitialInteractionType = task => {
-    const availableTypes = getAvailableInteractionTypes(task);
-
-    if (availableTypes.includes("miRNA-mRNA")) {
-        return "miRNA-mRNA";
-    }
-
-    return availableTypes[0] || "miRNA-mRNA";
-};
-
-const PairedCohortLog2FCCorrelationSection = ({
+const PairedCohortSurvivalSection = ({
     task,
     height = 620,
 }) => {
     const taskUUID = task?.data?.uuid;
 
-    const availableBackgroundTypes = useMemo(() => {
-        return getAvailableBackgroundTypes(task);
-    }, [task]);
-
-    const backgroundTypeOptions = useMemo(() => {
-        return buildBackgroundTypeOptions(availableBackgroundTypes);
-    }, [availableBackgroundTypes]);
-
-    const [queryConfig, setQueryConfig] = useState({
-        interactionType: getInitialBackgroundType(task),
-    });
-
     const [visualConfig, setVisualConfig] = useState(DEFAULT_VISUAL_CONFIG);
-    const [searchKeyword, setSearchKeyword] = useState("");
     const [isControlPanelCollapsed, setIsControlPanelCollapsed] = useState(false);
 
-    useEffect(() => {
-        setQueryConfig(prev => {
-            if (availableBackgroundTypes.includes(prev.interactionType)) {
-                return prev;
-            }
-
-            return {
-                ...prev,
-                interactionType: availableBackgroundTypes[0] || null,
-            };
-        });
-    }, [availableBackgroundTypes]);
-
-    useEffect(() => {
-        setSearchKeyword("");
-    }, [queryConfig.interactionType]);
-
     const {
-        correlationData,
+        survivalData,
         titlePrimary,
         titleSecondary,
+        summary,
         isLoading,
         isError,
-    } = usePairedCohortLog2FCCorrelation({
-        taskUUID,
-        interactionType: queryConfig.interactionType,
-    });
-
-    const searchOptions = getSearchOptions(correlationData);
+    } = usePairedCohortSurvivalKM(taskUUID);
 
     const renderPlotContent = () => {
         if (!taskUUID) {
@@ -140,16 +52,6 @@ const PairedCohortLog2FCCorrelationSection = ({
                 <EmptyView
                     bordered
                     description="Missing task UUID"
-                    containerSx={{ height: "100%" }}
-                />
-            );
-        }
-
-        if (!availableBackgroundTypes.length || !queryConfig.interactionType) {
-            return (
-                <EmptyView
-                    bordered
-                    description="No available background interaction types"
                     containerSx={{ height: "100%" }}
                 />
             );
@@ -163,26 +65,25 @@ const PairedCohortLog2FCCorrelationSection = ({
             return <ErrorView containerSx={{ height: "100%" }} />;
         }
 
-        if (!hasCorrelationData(correlationData)) {
+        if (!hasSurvivalData(survivalData)) {
             return (
                 <EmptyView
                     bordered
-                    description="No log2FC correlation data"
+                    description="No survival analysis data"
                     containerSx={{ height: "100%" }}
                 />
             );
         }
 
         return (
-            <Log2FCCorrelationPlot
-                data={correlationData}
+            <SurvivalKMPlot
+                data={survivalData}
                 titlePrimary={titlePrimary}
                 titleSecondary={titleSecondary}
                 height="100%"
-                pointSize={visualConfig.pointSize}
-                pointOpacitySame={visualConfig.pointOpacitySame}
-                pointOpacityAnti={visualConfig.pointOpacityAnti}
-                highlightKeyword={searchKeyword.trim()}
+                showConfidenceInterval={visualConfig.showConfidenceInterval}
+                showSymbols={visualConfig.showSymbols}
+                lineWidth={visualConfig.lineWidth}
                 containerSx={{
                     minHeight: 0,
                 }}
@@ -209,7 +110,7 @@ const PairedCohortLog2FCCorrelationSection = ({
                         m: 0,
                     }}
                 >
-                    Log2FC Correlation Plot
+                    Survival Analysis
                 </Box>
             </Stack>
 
@@ -230,15 +131,10 @@ const PairedCohortLog2FCCorrelationSection = ({
                             min={260}
                             max={500}
                         >
-                            <PairedCohortLog2FCCorrelationControlPanel
-                                queryConfig={queryConfig}
-                                setQueryConfig={setQueryConfig}
-                                interactionTypeOptions={backgroundTypeOptions}
+                            <PairedCohortSurvivalControlPanel
                                 visualConfig={visualConfig}
                                 setVisualConfig={setVisualConfig}
-                                searchKeyword={searchKeyword}
-                                setSearchKeyword={setSearchKeyword}
-                                searchOptions={searchOptions}
+                                summary={summary}
                                 onCollapse={() =>
                                     setIsControlPanelCollapsed(true)
                                 }
@@ -282,4 +178,4 @@ const PairedCohortLog2FCCorrelationSection = ({
     );
 };
 
-export default PairedCohortLog2FCCorrelationSection;
+export default PairedCohortSurvivalSection;

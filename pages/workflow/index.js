@@ -3,6 +3,7 @@ import { useState } from "react"
 import NetworkWrapper from "@/components/features/workflow/components/module1/NetworkWrapper"
 import { ConfigProvider, Menu } from "antd"
 import PairedCohortModeWrapper from "@/components/features/workflow/components/module2/PairedCohortModeWrapper"
+import HybridReferenceModeWrapper from "@/components/features/workflow/components/module3/HybridReferenceModeWrapper"
 
 const customTheme = {
     components: {
@@ -22,7 +23,11 @@ const menuItems = [
     {
         key: 'mode2',
         label: 'Paired Cohort Mode'
-    }
+    },
+    {
+        key: "mode3",
+        label: "Hybrid Reference Mode",
+    },
 ]
 
 const Workflow = ({}) => {
@@ -34,6 +39,8 @@ const Workflow = ({}) => {
                 return <NetworkWrapper/>
             case 'mode2':
                 return <PairedCohortModeWrapper/>
+            case "mode3":
+                return <HybridReferenceModeWrapper />
             default:
                 return null
         }

@@ -34,10 +34,14 @@ export const MULTI_VALUE_FIELDS = new Set([
 ])
 
 export const FILTER_FIELDS = [
+    "programme",
+    "reference",
     "cancer_type",
 ]
 
 export const FILTER_LABEL_MAP = {
+    programme: "Programme",
+    reference: "Reference",
     cancer_type: "Cancer Type",
 }
 
@@ -80,7 +84,7 @@ export const getDatasetMetadataColumns = (geneBioType) => {
             dataIndex: "reference",
             align: "center",
             sorter: (a, b) => safeCompare(a, b, "reference"),
-            render: value => <BasicChip value={value} color="green"/>,
+            render: value => <BasicChip value={value === '' ? 'NA' : value} color="green"/>,
         },
         {
             title: "Cancer Type",

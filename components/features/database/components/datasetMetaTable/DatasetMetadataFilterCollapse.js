@@ -5,15 +5,19 @@ import { DoubleLeftOutlined } from "@ant-design/icons"
 import FilterCancel from "@/components/icons/FilterCancel"
 import { FILTER_LABEL_MAP } from "./datasetMetadataConfig"
 
+const DEFAULT_ACTIVE_FILTER_KEYS = [
+    "programme",
+    "reference",
+    "cancer_type",
+]
+
 const DatasetMetadataFilterCollapse = ({
     filters,
     setFilters,
     availableFilters,
     clearFilters,
 }) => {
-    const [activeKey, setActiveKey] = useState([
-        "cancer_type",
-    ])
+    const [activeKey, setActiveKey] = useState(DEFAULT_ACTIVE_FILTER_KEYS)
 
     const collapseItems = useMemo(() => {
         return Object.keys(availableFilters).map(key => ({

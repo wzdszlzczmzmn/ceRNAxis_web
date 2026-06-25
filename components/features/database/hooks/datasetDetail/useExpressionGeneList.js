@@ -2,8 +2,8 @@ import useSWR from "swr"
 import { fetcher } from "@/lib/api/fetcher"
 import { getExpressionGeneListURL } from "@/components/features/database/hooks/datasetDetail/useDatasetDetail"
 
-export const useExpressionGeneList = (dataset, rnaType, expressionType) => {
-    const url = getExpressionGeneListURL(dataset, rnaType, expressionType)
+export const useExpressionGeneList = (dataset, expressionType) => {
+    const url = getExpressionGeneListURL(dataset, expressionType)
 
     const { data, error, isLoading, mutate } = useSWR(url, fetcher)
 

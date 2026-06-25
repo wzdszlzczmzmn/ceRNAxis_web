@@ -130,7 +130,7 @@ const ExpressionDataTable = ({ dataset, rnaType, expressionType }) => {
         count: geneCount,
         isLoading: isGeneLoading,
         isError: isGeneError,
-    } = useExpressionGeneList(dataset, rnaType, expressionType)
+    } = useExpressionGeneList(dataset, expressionType)
 
     useEffect(() => {
         setSelectedGenes([])

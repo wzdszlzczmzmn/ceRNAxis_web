@@ -11,26 +11,51 @@ const DatasetDetailPage = ({}) => {
 
     const {
         metadata,
+        expressionMode,
+        expressionFileFormat,
         availableExpressionTypes,
         availableDegExpressionTypes,
         isLoading,
         isError,
-        mutate
     } = useDatasetDetail(dataset)
 
-    if (!router.isReady || isLoading) return <LoadingView containerSx={{ height: '80vh', marginTop: '40px' }}/>
+    if (!router.isReady || isLoading) {
+        return (
+            <LoadingView
+                containerSx={{
+                    height: "80vh",
+                    marginTop: "40px",
+                }}
+            />
+        )
+    }
 
-    if (isError) return <ErrorView containerSx={{ height: '80vh', marginTop: '40px' }}/>
+    if (isError) {
+        return (
+            <ErrorView
+                containerSx={{
+                    height: "80vh",
+                    marginTop: "40px",
+                }}
+            />
+        )
+    }
 
     return (
         <>
             <Head>
                 <title>{dataset} | ceRNAxis</title>
-                <meta name="description" content={`Details of dataset ${dataset}`}/>
+                <meta
+                    name="description"
+                    content={`Details of dataset ${dataset}`}
+                />
             </Head>
+
             <DatasetDetailContent
                 dataset={dataset}
                 metadata={metadata}
+                expressionMode={expressionMode}
+                expressionFileFormat={expressionFileFormat}
                 availableExpressionTypes={availableExpressionTypes}
                 availableDegExpressionTypes={availableDegExpressionTypes}
             />

@@ -11,10 +11,13 @@ export const useDatasetDetail = (dataset) => {
 
     return {
         metadata: data?.metadata ?? null,
+        expressionMode: data?.expression_mode ?? null,
+        expressionFileFormat: data?.expression_file_format ?? null,
         availableExpressionTypes: data?.available_expression_types ?? [],
         availableDegExpressionTypes: data?.available_deg_expression_types ?? [],
         isLoading,
-        isError: error,
+        isError: !!error,
+        error,
         mutate,
     }
 }
@@ -42,12 +45,8 @@ export const isValidExpressionType = (rnaType, expressionType) => {
     return getExpressionTypesByRNAType(rnaType).includes(expressionType)
 }
 
-export const getExpressionGeneListURL = (dataset, rnaType, expressionType) => {
-    if (
-        !dataset ||
-        !isValidRNAType(rnaType) ||
-        !isValidExpressionType(rnaType, expressionType)
-    ) {
+export const getExpressionGeneListURL = (dataset, expressionType) => {
+    if (!dataset || !expressionType) {
         return null
     }
 

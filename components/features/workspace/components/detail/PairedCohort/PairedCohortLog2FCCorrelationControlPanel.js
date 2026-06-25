@@ -18,20 +18,10 @@ import {
     LabeledSlider,
 } from "@/components/features/visualization/components/VolcanoControlPrimitives";
 
-const INTERACTION_TYPE_OPTIONS = [
-    {
-        label: "miRNA-mRNA",
-        value: "miRNA-mRNA",
-    },
-    {
-        label: "miRNA-lncRNA",
-        value: "miRNA-lncRNA",
-    }
-];
-
 const PairedCohortLog2FCCorrelationControlPanel = ({
     queryConfig,
     setQueryConfig,
+    interactionTypeOptions = [],
     visualConfig,
     setVisualConfig,
     searchKeyword,
@@ -86,7 +76,8 @@ const PairedCohortLog2FCCorrelationControlPanel = ({
                         style={{ width: "100%" }}
                         value={queryConfig.interactionType}
                         placeholder="Select interaction type"
-                        options={INTERACTION_TYPE_OPTIONS}
+                        options={interactionTypeOptions}
+                        disabled={interactionTypeOptions.length === 0}
                         onChange={value =>
                             setQueryConfig(prev => ({
                                 ...prev,

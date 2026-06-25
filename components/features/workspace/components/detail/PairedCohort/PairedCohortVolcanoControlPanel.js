@@ -20,24 +20,10 @@ import {
     LabeledSlider,
 } from "@/components/features/visualization/components/VolcanoControlPrimitives";
 
-const RNA_TYPE_OPTIONS = [
-    {
-        label: "mRNA",
-        value: "mRNA",
-    },
-    {
-        label: "miRNA",
-        value: "miRNA",
-    },
-    {
-        label: "lncRNA",
-        value: "lncRNA",
-    },
-];
-
 const PairedCohortVolcanoControlPanel = ({
     queryConfig,
     setQueryConfig,
+    rnaTypeOptions = [],
     visualConfig,
     setVisualConfig,
     geneSearchOptions = [],
@@ -93,7 +79,8 @@ const PairedCohortVolcanoControlPanel = ({
                         style={{ width: "100%" }}
                         value={queryConfig.rnaType}
                         placeholder="Select RNA type"
-                        options={RNA_TYPE_OPTIONS}
+                        options={rnaTypeOptions}
+                        disabled={rnaTypeOptions.length === 0}
                         onChange={value =>
                             setQueryConfig(prev => ({
                                 ...prev,

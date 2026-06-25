@@ -39,6 +39,36 @@ const DEFAULT_CUTOFFS = {
         logfc_cutoff: 1,
         padj_cutoff: 0.05,
     },
+    circRNA: {
+        logfc_cutoff: 1,
+        padj_cutoff: 0.05,
+    },
+}
+
+const RNA_TYPE_LABEL_MAP = {
+    mRNA: "mRNA",
+    miRNA: "miRNA",
+    lncRNA: "lncRNA",
+    circRNA: "circRNA",
+}
+
+const FALLBACK_DEG_RNA_TYPES = ["mRNA", "miRNA"]
+
+const getAvailableDegRnaTypes = (task) => {
+    const availableTypes = task?.data?.available_deg_rna_types
+
+    if (Array.isArray(availableTypes) && availableTypes.length > 0) {
+        return availableTypes
+    }
+
+    return FALLBACK_DEG_RNA_TYPES
+}
+
+const buildRnaTypeOptions = (rnaTypes) => {
+    return rnaTypes.map(rnaType => ({
+        label: RNA_TYPE_LABEL_MAP[rnaType] ?? rnaType,
+        value: rnaType,
+    }))
 }
 
 const hasVolcanoData = data => {
@@ -85,12 +115,42 @@ const PairedCohortVolcanoAnalysisSection = ({
 }) => {
     const taskUUID = task?.data?.uuid
 
+    const availableDegRnaTypes = useMemo(() => {
+        return getAvailableDegRnaTypes(task)
+    }, [task])
+
+    const rnaTypeOptions = useMemo(() => {
+        return buildRnaTypeOptions(availableDegRnaTypes)
+    }, [availableDegRnaTypes])
+
     const [queryConfig, setQueryConfig] = useState({
-        rnaType: "mRNA",
+        rnaType: availableDegRnaTypes[0] ?? null,
     })
+
     const [visualConfig, setVisualConfig] = useState(DEFAULT_VISUAL_CONFIG)
     const [searchGene, setSearchGene] = useState("")
     const [isControlPanelCollapsed, setIsControlPanelCollapsed] = useState(false)
+
+    useEffect(() => {
+        if (!availableDegRnaTypes.length) {
+            setQueryConfig(prev => ({
+                ...prev,
+                rnaType: null,
+            }))
+            return
+        }
+
+        setQueryConfig(prev => {
+            if (availableDegRnaTypes.includes(prev.rnaType)) {
+                return prev
+            }
+
+            return {
+                ...prev,
+                rnaType: availableDegRnaTypes[0],
+            }
+        })
+    }, [availableDegRnaTypes])
 
     useEffect(() => {
         setSearchGene("")
@@ -122,6 +182,16 @@ const PairedCohortVolcanoAnalysisSection = ({
                 <EmptyView
                     bordered
                     description="Missing task UUID"
+                    containerSx={{ height: "100%" }}
+                />
+            )
+        }
+
+        if (!availableDegRnaTypes.length || !queryConfig.rnaType) {
+            return (
+                <EmptyView
+                    bordered
+                    description="No available DEG RNA types"
                     containerSx={{ height: "100%" }}
                 />
             )
@@ -209,6 +279,7 @@ const PairedCohortVolcanoAnalysisSection = ({
                             <PairedCohortVolcanoControlPanel
                                 queryConfig={queryConfig}
                                 setQueryConfig={setQueryConfig}
+                                rnaTypeOptions={rnaTypeOptions}
                                 visualConfig={visualConfig}
                                 setVisualConfig={setVisualConfig}
                                 geneSearchOptions={geneSearchOptions}

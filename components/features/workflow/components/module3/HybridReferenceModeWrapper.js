@@ -32,12 +32,14 @@ import api from "@/lib/api/axios";
 import BasicChip from "@/components/ui/chips/BasicChip";
 import ResultModal from "@/components/features/workflow/components/common/ResultModal";
 import { useGlobalMessage } from "@/context/MessageContext";
-
 import { useImmuneAnnotationList } from "@/components/features/workflow/hooks/useImmuneAnnotationList";
 import LoadingView from "@/components/common/status/LoadingView";
 import ErrorView from "@/components/common/status/ErrorView";
 import EmptyView from "@/components/common/status/EmptyView";
-import { getPairedCohortRunDemoURL, getPairedCohortSubmitTaskURL } from "@/lib/api/analysis"
+import {
+    getHybridReferenceRunDemoURL,
+    getHybridReferenceSubmitTaskURL,
+} from "@/lib/api/analysis";
 
 const { Dragger } = Upload;
 const { Text, Link: AntLink } = Typography;
@@ -45,50 +47,76 @@ const { Text, Link: AntLink } = Typography;
 const TASK_NAME_PATTERN = /^[A-Za-z0-9_-]+$/;
 const TASK_NAME_MAX_LENGTH = 64;
 
+const TCGA_TYPE_OPTIONS = [
+    { label: "TCGA_ACC", value: "TCGA_ACC" },
+    { label: "TCGA_BLCA", value: "TCGA_BLCA" },
+    { label: "TCGA_BRCA", value: "TCGA_BRCA" },
+    { label: "TCGA_CESC", value: "TCGA_CESC" },
+    { label: "TCGA_CHOL", value: "TCGA_CHOL" },
+    { label: "TCGA_COAD", value: "TCGA_COAD" },
+    { label: "TCGA_DLBC", value: "TCGA_DLBC" },
+    { label: "TCGA_ESCA", value: "TCGA_ESCA" },
+    { label: "TCGA_GBM", value: "TCGA_GBM" },
+    { label: "TCGA_HNSC", value: "TCGA_HNSC" },
+    { label: "TCGA_KICH", value: "TCGA_KICH" },
+    { label: "TCGA_KIRC", value: "TCGA_KIRC" },
+    { label: "TCGA_KIRP", value: "TCGA_KIRP" },
+    { label: "TCGA_LAML", value: "TCGA_LAML" },
+    { label: "TCGA_LGG", value: "TCGA_LGG" },
+    { label: "TCGA_LIHC", value: "TCGA_LIHC" },
+    { label: "TCGA_LUAD", value: "TCGA_LUAD" },
+    { label: "TCGA_LUSC", value: "TCGA_LUSC" },
+    { label: "TCGA_MESO", value: "TCGA_MESO" },
+    { label: "TCGA_OV", value: "TCGA_OV" },
+    { label: "TCGA_PAAD", value: "TCGA_PAAD" },
+    { label: "TCGA_PCPG", value: "TCGA_PCPG" },
+    { label: "TCGA_PRAD", value: "TCGA_PRAD" },
+    { label: "TCGA_READ", value: "TCGA_READ" },
+    { label: "TCGA_SARC", value: "TCGA_SARC" },
+    { label: "TCGA_SKCM", value: "TCGA_SKCM" },
+    { label: "TCGA_STAD", value: "TCGA_STAD" },
+    { label: "TCGA_TGCT", value: "TCGA_TGCT" },
+    { label: "TCGA_THCA", value: "TCGA_THCA" },
+    { label: "TCGA_THYM", value: "TCGA_THYM" },
+    { label: "TCGA_UCEC", value: "TCGA_UCEC" },
+    { label: "TCGA_UCS", value: "TCGA_UCS" },
+    { label: "TCGA_UVM", value: "TCGA_UVM" },
+];
+
+const LNCRNA_TYPE_OPTIONS = [
+    { label: "log2count", value: "log2count" },
+    { label: "log2fpkm", value: "log2fpkm" },
+    { label: "log2fpkmuq", value: "log2fpkmuq" },
+    { label: "log2tpm", value: "log2tpm" },
+];
+
 const initialWorkflowParams = {
     taskName: "",
+    tcgaType: undefined,
+    lncrnaType: "log2tpm",
     mapInfo: undefined,
 
     degMethod: "limma",
 
     logfcCutoffMrna: 1,
     padjCutoffMrna: 0.05,
-
-    logfcCutoffMirna: 1,
-    padjCutoffMirna: 0.05,
-
-    logfcCutoffLncrna: 1,
-    padjCutoffLncrna: 0.05,
-
-    logfcCutoffCircrna: 1,
-    padjCutoffCircrna: 0.05,
 };
 
 const initialFileState = {
     mrnaFile: null,
-    mirnaFile: null,
-    lncrnaFile: null,
-    circrnaFile: null,
     metaFile: null,
 };
 
 const demoWorkflowParams = {
-    taskName: "demo_task_module2",
+    taskName: "demo_task_module3",
+    tcgaType: "TCGA_ACC",
+    lncrnaType: "log2tpm",
     mapInfo: "ImmiRImmiR_ACC",
 
     degMethod: "limma",
 
     logfcCutoffMrna: 1,
-    padjCutoffMrna: 0.1,
-
-    logfcCutoffMirna: 0.5,
-    padjCutoffMirna: 0.3,
-
-    logfcCutoffLncrna: 0.5,
-    padjCutoffLncrna: 0.3,
-
-    logfcCutoffCircrna: 0.5,
-    padjCutoffCircrna: 0.3,
+    padjCutoffMrna: 0.05,
 };
 
 const acceptedFileTypes = ".csv";
@@ -131,7 +159,7 @@ const getErrorMessage = (err, fallbackMessage) => {
     );
 };
 
-const Module2SubmitWrapper = () => {
+const HybridReferenceModeWrapper = () => {
     const [form] = Form.useForm();
 
     const [workflowParams, setWorkflowParams] = useState(initialWorkflowParams);
@@ -151,14 +179,14 @@ const Module2SubmitWrapper = () => {
     } = useImmuneAnnotationList();
 
     const updateWorkflowParams = (patch) => {
-        setWorkflowParams((prev) => ({
+        setWorkflowParams(prev => ({
             ...prev,
             ...patch,
         }));
     };
 
     const updateFile = (field, file) => {
-        setFiles((prev) => ({
+        setFiles(prev => ({
             ...prev,
             [field]: file,
         }));
@@ -191,6 +219,16 @@ const Module2SubmitWrapper = () => {
             return false;
         }
 
+        if (!workflowParams.tcgaType) {
+            messageApi.error("TCGA cancer type is required.");
+            return false;
+        }
+
+        if (!workflowParams.lncrnaType) {
+            messageApi.error("lncRNA value type is required.");
+            return false;
+        }
+
         if (!workflowParams.mapInfo) {
             messageApi.error("Immune annotation file is required.");
             return false;
@@ -198,21 +236,6 @@ const Module2SubmitWrapper = () => {
 
         if (!files.mrnaFile) {
             messageApi.error("mRNA expression file is required.");
-            return false;
-        }
-
-        if (!files.mirnaFile) {
-            messageApi.error("miRNA expression file is required.");
-            return false;
-        }
-
-        if (!files.lncrnaFile) {
-            messageApi.error("lncRNA expression file is required.");
-            return false;
-        }
-
-        if (!files.circrnaFile) {
-            messageApi.error("circRNA expression file is required.");
             return false;
         }
 
@@ -228,12 +251,11 @@ const Module2SubmitWrapper = () => {
         const formData = new FormData();
 
         formData.append("task_name", workflowParams.taskName.trim());
+        formData.append("tcga_type", workflowParams.tcgaType);
+        formData.append("lncrna_type", workflowParams.lncrnaType);
         formData.append("map_info", workflowParams.mapInfo);
 
         formData.append("mrna_file", files.mrnaFile.originFileObj);
-        formData.append("mirna_file", files.mirnaFile.originFileObj);
-        formData.append("lncrna_file", files.lncrnaFile.originFileObj);
-        formData.append("circrna_file", files.circrnaFile.originFileObj);
         formData.append("meta_file", files.metaFile.originFileObj);
 
         formData.append("deg_method", workflowParams.degMethod);
@@ -247,33 +269,6 @@ const Module2SubmitWrapper = () => {
             String(workflowParams.padjCutoffMrna)
         );
 
-        formData.append(
-            "logfc_cutoff_mirna",
-            String(workflowParams.logfcCutoffMirna)
-        );
-        formData.append(
-            "padj_cutoff_mirna",
-            String(workflowParams.padjCutoffMirna)
-        );
-
-        formData.append(
-            "logfc_cutoff_lncrna",
-            String(workflowParams.logfcCutoffLncrna)
-        );
-        formData.append(
-            "padj_cutoff_lncrna",
-            String(workflowParams.padjCutoffLncrna)
-        );
-
-        formData.append(
-            "logfc_cutoff_circrna",
-            String(workflowParams.logfcCutoffCircrna)
-        );
-        formData.append(
-            "padj_cutoff_circrna",
-            String(workflowParams.padjCutoffCircrna)
-        );
-
         return formData;
     };
 
@@ -282,7 +277,7 @@ const Module2SubmitWrapper = () => {
             setIsSubmitting(true);
 
             const response = await api.post(
-                getPairedCohortRunDemoURL(),
+                getHybridReferenceRunDemoURL(),
                 {},
                 {
                     timeout: 600000,
@@ -321,7 +316,7 @@ const Module2SubmitWrapper = () => {
             const formData = buildSubmitFormData();
 
             const response = await api.post(
-                getPairedCohortSubmitTaskURL(),
+                getHybridReferenceSubmitTaskURL(),
                 formData,
                 {
                     timeout: 600000,
@@ -393,11 +388,11 @@ const Module2SubmitWrapper = () => {
                                 m: 0,
                             }}
                         >
-                            Paired Cohort Mode
+                            Hybrid Reference Mode
                         </Box>
 
                         <BasicChip
-                            value="Mode 2"
+                            value="Mode 3"
                             color="blue"
                             style={{
                                 height: "32px",
@@ -427,8 +422,8 @@ const Module2SubmitWrapper = () => {
                             danger
                             icon={<FileSearchOutlined />}
                             disabled={isSubmitting}
-                            href='/workspace/detail?taskId=3603a460-1972-4771-b3e0-21e05f00d9c8'
-                            target='_blank'
+                            href="/workspace/detail?taskId=YOUR_MODULE3_DEMO_UUID"
+                            target="_blank"
                         >
                             View Demo Result
                         </Button>
@@ -452,8 +447,8 @@ const Module2SubmitWrapper = () => {
                             icon={<FileExcelOutlined />}
                             onClick={handleLoadDemoInput}
                             disabled={isSubmitting}
-                            href='/workflow/demoFiles?task_type=PairedCohortTask'
-                            target='_blank'
+                            href="/workflow/demoFiles?task_type=HybridReferenceTask"
+                            target="_blank"
                         >
                             View Demo Files
                         </Button>
@@ -481,10 +476,10 @@ const Module2SubmitWrapper = () => {
                     }
                     description={
                         <Box component="span" sx={{ fontSize: "14px" }}>
-                            Expression matrix files include <b>mRNA</b>, <b>miRNA</b>,{" "}
-                            <b>lncRNA</b> and <b>circRNA</b>. All expression matrix files and
-                            meta file should follow the platform-defined format. The backend will
-                            use fixed columns:
+                            Hybrid Reference Mode uses an uploaded <b>mRNA expression matrix</b>,
+                            an uploaded <b>sample meta file</b>, and a selected TCGA reference
+                            cancer type to construct ceRNA-related results. The backend will use
+                            fixed columns:
                             <Box component="ul" sx={{ mb: 0 }}>
                                 <li>
                                     Expression sample column: <b>sample_id</b>
@@ -555,6 +550,86 @@ const Module2SubmitWrapper = () => {
                                             disabled={isSubmitting}
                                             maxLength={TASK_NAME_MAX_LENGTH}
                                             showCount
+                                        />
+                                    </Form.Item>
+                                </Space>
+                            </Col>
+
+                            <Col xs={24} md={12}>
+                                <Space
+                                    direction="vertical"
+                                    size={6}
+                                    style={{ width: "100%" }}
+                                >
+                                    <Text strong>
+                                        <span style={{ color: "#ff4d4f" }}>* </span>
+                                        TCGA Reference Cancer Type
+                                    </Text>
+
+                                    <Form.Item
+                                        name="tcgaType"
+                                        style={{ marginBottom: 0 }}
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: "Please select TCGA cancer type.",
+                                            },
+                                        ]}
+                                    >
+                                        <Select
+                                            value={workflowParams.tcgaType}
+                                            onChange={(value) =>
+                                                updateWorkflowParams({
+                                                    tcgaType: value,
+                                                })
+                                            }
+                                            options={TCGA_TYPE_OPTIONS}
+                                            placeholder="Select TCGA cancer type"
+                                            style={{ width: "100%" }}
+                                            disabled={isSubmitting}
+                                            showSearch
+                                            optionFilterProp="label"
+                                        />
+                                    </Form.Item>
+                                </Space>
+                            </Col>
+                        </Row>
+
+                        <Row gutter={[20, 16]}>
+                            <Col xs={24} md={12}>
+                                <Space
+                                    direction="vertical"
+                                    size={6}
+                                    style={{ width: "100%" }}
+                                >
+                                    <Text strong>
+                                        <span style={{ color: "#ff4d4f" }}>* </span>
+                                        lncRNA Reference Value Type
+                                    </Text>
+
+                                    <Form.Item
+                                        name="lncrnaType"
+                                        style={{ marginBottom: 0 }}
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: "Please select lncRNA value type.",
+                                            },
+                                        ]}
+                                    >
+                                        <Select
+                                            value={workflowParams.lncrnaType}
+                                            onChange={(value) =>
+                                                updateWorkflowParams({
+                                                    lncrnaType: value,
+                                                })
+                                            }
+                                            options={LNCRNA_TYPE_OPTIONS}
+                                            placeholder="Select lncRNA value type"
+                                            style={{ width: "100%" }}
+                                            disabled={isSubmitting}
+                                            showSearch
+                                            optionFilterProp="label"
                                         />
                                     </Form.Item>
                                 </Space>
@@ -654,100 +729,6 @@ const Module2SubmitWrapper = () => {
 
                             <Box sx={{ flex: 1 }}>
                                 <Form.Item
-                                    label="miRNA expression matrix"
-                                    required
-                                >
-                                    <Dragger
-                                        {...makeSingleFileUploadProps({
-                                            file: files.mirnaFile,
-                                            disabled: isSubmitting,
-                                            onChange: (file) =>
-                                                updateFile("mirnaFile", file),
-                                        })}
-                                    >
-                                        <p className="ant-upload-drag-icon">
-                                            <InboxOutlined />
-                                        </p>
-                                        <p className="ant-upload-text">
-                                            Click or drag miRNA file to upload
-                                        </p>
-                                        <p className="ant-upload-hint">
-                                            Supported: CSV
-                                        </p>
-                                    </Dragger>
-                                </Form.Item>
-                            </Box>
-                        </Stack>
-
-                        <Stack
-                            direction={{
-                                xs: "column",
-                                md: "row",
-                            }}
-                            spacing={3}
-                        >
-                            <Box sx={{ flex: 1 }}>
-                                <Form.Item
-                                    label="lncRNA expression matrix"
-                                    required
-                                >
-                                    <Dragger
-                                        {...makeSingleFileUploadProps({
-                                            file: files.lncrnaFile,
-                                            disabled: isSubmitting,
-                                            onChange: (file) =>
-                                                updateFile("lncrnaFile", file),
-                                        })}
-                                    >
-                                        <p className="ant-upload-drag-icon">
-                                            <InboxOutlined />
-                                        </p>
-                                        <p className="ant-upload-text">
-                                            Click or drag lncRNA file to upload
-                                        </p>
-                                        <p className="ant-upload-hint">
-                                            Supported: CSV
-                                        </p>
-                                    </Dragger>
-                                </Form.Item>
-                            </Box>
-
-                            <Box sx={{ flex: 1 }}>
-                                <Form.Item
-                                    label="circRNA expression matrix"
-                                    required
-                                >
-                                    <Dragger
-                                        {...makeSingleFileUploadProps({
-                                            file: files.circrnaFile,
-                                            disabled: isSubmitting,
-                                            onChange: (file) =>
-                                                updateFile("circrnaFile", file),
-                                        })}
-                                    >
-                                        <p className="ant-upload-drag-icon">
-                                            <InboxOutlined />
-                                        </p>
-                                        <p className="ant-upload-text">
-                                            Click or drag circRNA file to upload
-                                        </p>
-                                        <p className="ant-upload-hint">
-                                            Supported: CSV
-                                        </p>
-                                    </Dragger>
-                                </Form.Item>
-                            </Box>
-                        </Stack>
-
-                        <Stack
-                            direction={{
-                                xs: "column",
-                                md: "row",
-                            }}
-                            spacing={3}
-                        >
-                            <Box sx={{ flex: 1 }}>
-                                <Form.Item
                                     label="Sample meta file"
                                     required
                                 >
@@ -772,12 +753,10 @@ const Module2SubmitWrapper = () => {
                                     </Dragger>
                                 </Form.Item>
                             </Box>
-
-                            <Box sx={{ flex: 1 }} />
                         </Stack>
 
                         <Collapse
-                            activeKey='advanced'
+                            activeKey="advanced"
                             items={[
                                 {
                                     key: "advanced",
@@ -833,8 +812,7 @@ const Module2SubmitWrapper = () => {
                                                         }
                                                         onChange={(value) =>
                                                             updateWorkflowParams({
-                                                                logfcCutoffMrna:
-                                                                value,
+                                                                logfcCutoffMrna: value,
                                                             })
                                                         }
                                                     />
@@ -857,171 +835,7 @@ const Module2SubmitWrapper = () => {
                                                         }
                                                         onChange={(value) =>
                                                             updateWorkflowParams({
-                                                                padjCutoffMrna:
-                                                                value,
-                                                            })
-                                                        }
-                                                    />
-                                                </Form.Item>
-                                            </Stack>
-
-                                            <Stack
-                                                direction={{
-                                                    xs: "column",
-                                                    md: "row",
-                                                }}
-                                                spacing={3}
-                                            >
-                                                <Form.Item
-                                                    label="miRNA log2FC cutoff"
-                                                    name="logfcCutoffMirna"
-                                                    required
-                                                    style={{ flex: 1 }}
-                                                >
-                                                    <InputNumber
-                                                        min={0}
-                                                        step={0.1}
-                                                        style={{ width: "100%" }}
-                                                        disabled={isSubmitting}
-                                                        value={
-                                                            workflowParams.logfcCutoffMirna
-                                                        }
-                                                        onChange={(value) =>
-                                                            updateWorkflowParams({
-                                                                logfcCutoffMirna:
-                                                                value,
-                                                            })
-                                                        }
-                                                    />
-                                                </Form.Item>
-
-                                                <Form.Item
-                                                    label="miRNA adjusted p-value cutoff"
-                                                    name="padjCutoffMirna"
-                                                    required
-                                                    style={{ flex: 1 }}
-                                                >
-                                                    <InputNumber
-                                                        min={0}
-                                                        max={1}
-                                                        step={0.01}
-                                                        style={{ width: "100%" }}
-                                                        disabled={isSubmitting}
-                                                        value={
-                                                            workflowParams.padjCutoffMirna
-                                                        }
-                                                        onChange={(value) =>
-                                                            updateWorkflowParams({
-                                                                padjCutoffMirna:
-                                                                value,
-                                                            })
-                                                        }
-                                                    />
-                                                </Form.Item>
-                                            </Stack>
-
-                                            <Stack
-                                                direction={{
-                                                    xs: "column",
-                                                    md: "row",
-                                                }}
-                                                spacing={3}
-                                            >
-                                                <Form.Item
-                                                    label="lncRNA log2FC cutoff"
-                                                    name="logfcCutoffLncrna"
-                                                    required
-                                                    style={{ flex: 1 }}
-                                                >
-                                                    <InputNumber
-                                                        min={0}
-                                                        step={0.1}
-                                                        style={{ width: "100%" }}
-                                                        disabled={isSubmitting}
-                                                        value={
-                                                            workflowParams.logfcCutoffLncrna
-                                                        }
-                                                        onChange={(value) =>
-                                                            updateWorkflowParams({
-                                                                logfcCutoffLncrna:
-                                                                value,
-                                                            })
-                                                        }
-                                                    />
-                                                </Form.Item>
-
-                                                <Form.Item
-                                                    label="lncRNA adjusted p-value cutoff"
-                                                    name="padjCutoffLncrna"
-                                                    required
-                                                    style={{ flex: 1 }}
-                                                >
-                                                    <InputNumber
-                                                        min={0}
-                                                        max={1}
-                                                        step={0.01}
-                                                        style={{ width: "100%" }}
-                                                        disabled={isSubmitting}
-                                                        value={
-                                                            workflowParams.padjCutoffLncrna
-                                                        }
-                                                        onChange={(value) =>
-                                                            updateWorkflowParams({
-                                                                padjCutoffLncrna:
-                                                                value,
-                                                            })
-                                                        }
-                                                    />
-                                                </Form.Item>
-                                            </Stack>
-
-                                            <Stack
-                                                direction={{
-                                                    xs: "column",
-                                                    md: "row",
-                                                }}
-                                                spacing={3}
-                                            >
-                                                <Form.Item
-                                                    label="circRNA log2FC cutoff"
-                                                    name="logfcCutoffCircrna"
-                                                    required
-                                                    style={{ flex: 1 }}
-                                                >
-                                                    <InputNumber
-                                                        min={0}
-                                                        step={0.1}
-                                                        style={{ width: "100%" }}
-                                                        disabled={isSubmitting}
-                                                        value={
-                                                            workflowParams.logfcCutoffCircrna
-                                                        }
-                                                        onChange={(value) =>
-                                                            updateWorkflowParams({
-                                                                logfcCutoffCircrna: value,
-                                                            })
-                                                        }
-                                                    />
-                                                </Form.Item>
-
-                                                <Form.Item
-                                                    label="circRNA adjusted p-value cutoff"
-                                                    name="padjCutoffCircrna"
-                                                    required
-                                                    style={{ flex: 1 }}
-                                                >
-                                                    <InputNumber
-                                                        min={0}
-                                                        max={1}
-                                                        step={0.01}
-                                                        style={{ width: "100%" }}
-                                                        disabled={isSubmitting}
-                                                        value={
-                                                            workflowParams.padjCutoffCircrna
-                                                        }
-                                                        onChange={(value) =>
-                                                            updateWorkflowParams({
-                                                                padjCutoffCircrna: value,
+                                                                padjCutoffMrna: value,
                                                             })
                                                         }
                                                     />
@@ -1065,4 +879,4 @@ const Module2SubmitWrapper = () => {
     );
 };
 
-export default Module2SubmitWrapper;
+export default HybridReferenceModeWrapper;

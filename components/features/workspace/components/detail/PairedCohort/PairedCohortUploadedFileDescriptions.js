@@ -12,6 +12,7 @@ import { getTaskData } from "@/components/features/workspace/components/taskInfo
 import { downloadBlob, getPairedCohortUploadedFileDownloadURL } from "@/lib/api/analysis"
 import api from "@/lib/api/axios"
 import { useGlobalMessage } from "@/context/MessageContext"
+import { parseBlobErrorMessage } from "@/lib/api/database/datasetDetail"
 
 const { Text } = Typography;
 
@@ -29,38 +30,14 @@ const FILE_FIELD_CONFIGS = [
         label: "lncRNA Expression Matrix",
     },
     {
+        key: "circrna_file",
+        label: "circRNA Expression Matrix",
+    },
+    {
         key: "meta_file",
         label: "Sample Meta File",
     },
 ];
-
-const parseBlobErrorMessage = async (err) => {
-    const data = err.response?.data;
-
-    if (data instanceof Blob) {
-        try {
-            const text = await data.text();
-            const json = JSON.parse(text);
-
-            return (
-                json.msg ||
-                json.detail ||
-                json.message ||
-                "Download failed."
-            );
-        } catch {
-            return "Download failed.";
-        }
-    }
-
-    return (
-        data?.msg ||
-        data?.detail ||
-        data?.message ||
-        err.message ||
-        "Download failed."
-    );
-};
 
 const PairedCohortUploadedFileDescriptions = ({
     task,

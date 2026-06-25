@@ -4,7 +4,10 @@ import ErrorView from "@/components/common/status/ErrorView";
 import { useDatasetSampleMetaList } from "@/components/features/database/hooks/datasetDetail/useDatasetSampleMetaList";
 import SampleMetaTable from "@/components/features/common/sampleMeta/SampleMetaTable";
 
-const DatasetSampleMetaTable = ({ dataset }) => {
+const DatasetSampleMetaTable = ({
+    dataset,
+    expressionMode = "tcga",
+}) => {
     const {
         count,
         samples,
@@ -40,6 +43,7 @@ const DatasetSampleMetaTable = ({ dataset }) => {
             <SampleMetaTable
                 count={count}
                 samples={samples}
+                expressionMode={expressionMode}
             />
         </>
     );

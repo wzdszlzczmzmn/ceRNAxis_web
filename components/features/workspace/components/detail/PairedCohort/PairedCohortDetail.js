@@ -22,6 +22,10 @@ import PairedCohortNetworkResultWrapper
     from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortNetworkResultWrapper"
 import { getWorkflowTaskResultDownloadURL } from "@/lib/api/analysis"
 import { triggerBrowserDownload } from "@/lib/api/utils/browserDownload"
+import PairedCohortAxisFinalSection
+    from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortAxisFinalSection"
+import PairedCohortSurvivalSection
+    from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortSurvivalSection"
 
 const PairedCohortDetail = ({
     task,
@@ -74,11 +78,15 @@ const PairedCohortDetail = ({
 
             <PairedCohortNetworkResultWrapper task={task} />
 
+            <PairedCohortAxisFinalSection task={task} />
+
             <PairedCohortVolcanoAnalysisSection task={task} />
 
             <PairedCohortLog2FCCorrelationSection task={task} />
 
             <PairedCohortExpCorrelationSection task={task} />
+
+            <PairedCohortSurvivalSection task={task} />
         </Stack>
     );
 };

@@ -27,7 +27,7 @@ const buildItems = (metadata) => [
     {
         key: 'reference',
         label: "Reference",
-        children: <BasicChip value={metadata['reference']} color="green"/>,
+        children: <BasicChip value={metadata['reference'] === '' ? 'NA' : metadata['reference']} color="green"/>,
     },
     {
         key: 'cancerType',

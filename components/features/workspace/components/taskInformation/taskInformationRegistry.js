@@ -217,6 +217,12 @@ const generatePairedCohortTaskItems = (taskInformation) => {
             children: formatCutoff(cutoffs.lncRNA),
             span: 2,
         },
+        {
+            key: "circRNACutoff",
+            label: "circRNA DEG Cutoff",
+            children: formatCutoff(cutoffs.circRNA),
+            span: 2,
+        }
     ];
 };
 
