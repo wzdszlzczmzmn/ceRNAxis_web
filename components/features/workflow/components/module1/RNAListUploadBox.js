@@ -21,12 +21,11 @@ import { useImmuneAnnotationList } from "@/components/features/workflow/hooks/us
 import LoadingView from "@/components/common/status/LoadingView";
 import ErrorView from "@/components/common/status/ErrorView";
 import EmptyView from "@/components/common/status/EmptyView";
-import Link from "next/link";
 
 const { TextArea } = Input;
 const { Text, Link: AntLink } = Typography;
 
-const MAX_TOTAL_RNA_COUNT = 100;
+const MAX_TOTAL_RNA_COUNT = 120;
 
 const RNA_TYPES = [
     { key: "miRNA", label: "miRNA", color: "volcano" },
@@ -96,6 +95,23 @@ const validateInput = (inputValue) => {
     return { valid: true };
 };
 
+const buildCancerTypeOptions = (immuneMapOptions = []) => {
+    return immuneMapOptions
+        .map(item => {
+            const cancerType = String(item?.label || "").trim();
+
+            if (!cancerType) {
+                return null;
+            }
+
+            return {
+                label: cancerType,
+                value: cancerType,
+            };
+        })
+        .filter(Boolean);
+};
+
 const RNAListUploadBox = ({
     workflowParams,
     onWorkflowParamsChange,
@@ -150,10 +166,10 @@ const RNAListUploadBox = ({
 
         const taskName = taskNameValidation.value;
 
-        if (!workflowParams.mapInfo) {
+        if (!workflowParams.cancerType) {
             Modal.warning({
-                title: "Missing immune annotation file",
-                content: "Please select an immune annotation file.",
+                title: "Missing cancer type",
+                content: "Please select a cancer type.",
             });
             return;
         }
@@ -186,7 +202,7 @@ const RNAListUploadBox = ({
 
         onUpload?.({
             task_name: taskName,
-            map_info: workflowParams.mapInfo,
+            cancer_type: workflowParams.cancerType,
             rnas: parsedRnas,
         });
     };
@@ -201,6 +217,10 @@ const RNAListUploadBox = ({
         isLoading: isImmuneMapLoading,
         isError: isImmuneMapError,
     } = useImmuneAnnotationList();
+
+    const cancerTypeOptions = useMemo(() => {
+        return buildCancerTypeOptions(immuneMapOptions);
+    }, [immuneMapOptions]);
 
     if (isImmuneMapLoading) {
         return <LoadingView containerSx={{ height: "420px" }} />;
@@ -275,28 +295,15 @@ const RNAListUploadBox = ({
 
                     <Col xs={24} md={12}>
                         <Space direction="vertical" size={6} style={{ width: "100%" }}>
-                            <Space
-                                style={{
-                                    width: "100%",
-                                    justifyContent: "space-between",
-                                }}
-                            >
-                                <Text strong>Immune Annotation File</Text>
-
-                                <Link href="/workflow/immuneAnnotations">
-                                    <AntLink>
-                                        Explore Annotations
-                                    </AntLink>
-                                </Link>
-                            </Space>
+                            <Text strong>Cancer Type</Text>
 
                             <Select
-                                value={workflowParams.mapInfo}
+                                value={workflowParams.cancerType}
                                 onChange={(value) =>
-                                    handleWorkflowParamChange("mapInfo", value)
+                                    handleWorkflowParamChange("cancerType", value)
                                 }
-                                options={immuneMapOptions}
-                                placeholder="Select immune annotation file"
+                                options={cancerTypeOptions}
+                                placeholder="Select cancer type"
                                 style={{ width: "100%" }}
                                 disabled={loading || isImmuneMapLoading || isImmuneMapError}
                                 loading={isImmuneMapLoading}

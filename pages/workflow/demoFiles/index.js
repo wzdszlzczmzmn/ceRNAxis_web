@@ -8,18 +8,21 @@ import { DownloadOutlined } from "@ant-design/icons";
 
 import PairedCohortDemoFilesDetail
     from "@/components/features/workflow/components/demoFiles/PairedCohortDemoFilesDetail";
-import { getPairedCohortDemoFilesDownloadURL }
+import { getHybridReferenceDemoFilesDownloadURL, getPairedCohortDemoFilesDownloadURL }
     from "@/lib/api/analysis";
 import { triggerBrowserDownload } from "@/lib/api/utils/browserDownload"
+import HybridReferenceDemoFilesDetail
+    from "@/components/features/workflow/components/demoFiles/HybridReferenceDemoFilesDetail"
 
 const DEMO_FILE_COMPONENT_MAP = {
     PairedCohortTask: PairedCohortDemoFilesDetail,
+    HybridReferenceTask: HybridReferenceDemoFilesDetail,
 };
 
 const DEMO_FILE_DOWNLOAD_URL_MAP = {
     PairedCohortTask: getPairedCohortDemoFilesDownloadURL,
+    HybridReferenceTask: getHybridReferenceDemoFilesDownloadURL,
 };
-
 const DemoFiles = () => {
     const router = useRouter();
 

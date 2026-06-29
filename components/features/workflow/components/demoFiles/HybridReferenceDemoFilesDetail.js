@@ -6,26 +6,26 @@ import LoadingView from "@/components/common/status/LoadingView";
 import ErrorView from "@/components/common/status/ErrorView";
 import EmptyView from "@/components/common/status/EmptyView";
 
-import { usePairedCohortDemoInfo }
-    from "@/components/features/workflow/hooks/usePairedCohortDemoInfo";
-import PairedCohortDemoSampleMetaTable
-    from "@/components/features/workflow/components/demoFiles/PairedCohortDemoSampleMetaTable";
-import PairedCohortDemoExpressionSection
-    from "@/components/features/workflow/components/demoFiles/PairedCohortDemoExpressionSection"
+import { useHybridReferenceDemoInfo }
+    from "@/components/features/workflow/hooks/useHybridReferenceDemoInfo";
+import HybridReferenceDemoSampleMetaTable
+    from "@/components/features/workflow/components/demoFiles/HybridReferenceDemoSampleMetaTable";
+import HybridReferenceDemoExpressionSection
+    from "@/components/features/workflow/components/demoFiles/HybridReferenceDemoExpressionSection";
 
-const isExpectedPairedCohortDemoInfo = (demoInfo) => {
+const isExpectedHybridReferenceDemoInfo = (demoInfo) => {
     return (
-        demoInfo?.workflow_type === "paired_cohort" &&
-        demoInfo?.task_type === "PairedCohortTask"
+        demoInfo?.workflow_type === "hybrid_reference" &&
+        demoInfo?.task_type === "HybridReferenceTask"
     );
 };
 
-const PairedCohortDemoFilesDetail = () => {
+const HybridReferenceDemoFilesDetail = () => {
     const {
         demoInfo,
         isLoading,
         isError,
-    } = usePairedCohortDemoInfo();
+    } = useHybridReferenceDemoInfo();
 
     if (isLoading) {
         return (
@@ -49,11 +49,11 @@ const PairedCohortDemoFilesDetail = () => {
         );
     }
 
-    if (!demoInfo || !isExpectedPairedCohortDemoInfo(demoInfo)) {
+    if (!demoInfo || !isExpectedHybridReferenceDemoInfo(demoInfo)) {
         return (
             <EmptyView
                 bordered
-                description="Paired Cohort demo files are not available."
+                description="Hybrid Reference demo files are not available."
                 containerSx={{
                     height: "60vh",
                     marginTop: "40px",
@@ -64,17 +64,15 @@ const PairedCohortDemoFilesDetail = () => {
 
     return (
         <Stack spacing={6} sx={{ px: "16px" }}>
-            <PairedCohortDemoSampleMetaTable />
-            <PairedCohortDemoExpressionSection
+            <HybridReferenceDemoSampleMetaTable />
+
+            <HybridReferenceDemoExpressionSection
                 rnaTypes={[
                     "mRNA",
-                    "miRNA",
-                    "lncRNA",
-                    "circRNA",
                 ]}
             />
         </Stack>
     );
 };
 
-export default PairedCohortDemoFilesDetail;
+export default HybridReferenceDemoFilesDetail;

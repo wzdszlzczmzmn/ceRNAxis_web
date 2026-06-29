@@ -1,17 +1,15 @@
 "use client";
 
 import { Stack } from "@mui/system";
-import PairedCohortDemoExpressionDataTable
-    from "@/components/features/workflow/components/demoFiles/PairedCohortDemoExpressionDataTable";
+
+import HybridReferenceDemoExpressionDataTable
+    from "@/components/features/workflow/components/demoFiles/HybridReferenceDemoExpressionDataTable";
 
 const DEFAULT_RNA_TYPES = [
     "mRNA",
-    "miRNA",
-    "lncRNA",
-    "circRNA",
 ];
 
-const PairedCohortDemoExpressionSection = ({
+const HybridReferenceDemoExpressionSection = ({
     rnaTypes = DEFAULT_RNA_TYPES,
 }) => {
     if (!Array.isArray(rnaTypes) || rnaTypes.length === 0) {
@@ -21,7 +19,7 @@ const PairedCohortDemoExpressionSection = ({
     return (
         <Stack spacing={5}>
             {rnaTypes.map(rnaType => (
-                <PairedCohortDemoExpressionDataTable
+                <HybridReferenceDemoExpressionDataTable
                     key={rnaType}
                     rnaType={rnaType}
                 />
@@ -30,4 +28,4 @@ const PairedCohortDemoExpressionSection = ({
     );
 };
 
-export default PairedCohortDemoExpressionSection;
+export default HybridReferenceDemoExpressionSection;

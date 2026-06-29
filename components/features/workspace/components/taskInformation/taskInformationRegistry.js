@@ -148,6 +148,7 @@ const generateCustomListQueryTaskItems = (taskInformation) => {
 
     const rnas = data.rnas ?? {};
     const params = data.params ?? data.workflow_params ?? {};
+    const rnaCounts = data.rna_counts ?? {};
 
     const taskName =
         data.task_name ||
@@ -155,12 +156,45 @@ const generateCustomListQueryTaskItems = (taskInformation) => {
         data.name ||
         "--";
 
-    const mapInfo =
-        data.map_info ||
-        params.map_info ||
+    const cancerType =
+        data.cancer_type ||
+        params.cancer_type ||
         "--";
 
-    return [
+    const hasMrnaDirection =
+        data.has_mrna_direction ??
+        params.has_mrna_direction;
+
+    const miRNACount =
+        data.miRNA_count ??
+        data.mirna_count ??
+        rnaCounts.miRNA ??
+        getListCount(rnas.miRNA);
+
+    const mRNACount =
+        data.mRNA_count ??
+        data.mrna_count ??
+        rnaCounts.mRNA ??
+        getListCount(rnas.mRNA);
+
+    const lncRNACount =
+        data.lncRNA_count ??
+        data.lncrna_count ??
+        rnaCounts.lncRNA ??
+        getListCount(rnas.lncRNA);
+
+    const circRNACount =
+        data.circRNA_count ??
+        data.circrna_count ??
+        rnaCounts.circRNA ??
+        getListCount(rnas.circRNA);
+
+    const totalRNACount =
+        data.total_rna_count ??
+        rnaCounts.total ??
+        miRNACount + mRNACount + lncRNACount + circRNACount;
+
+    const items = [
         {
             key: "TaskName",
             label: "Task Name",
@@ -168,51 +202,66 @@ const generateCustomListQueryTaskItems = (taskInformation) => {
             span: 2,
         },
         {
-            key: "MapInfo",
-            label: "Immune Annotation File",
-            children: formatChipValue(
-                formatMapInfoLabel(data.map_info),
-                "blue"
+            key: "CancerType",
+            label: "Cancer Type",
+            children: formatChipValue(cancerType, "purple"),
+            span: 1,
+        },
+        {
+            key: "HasMrnaDirection",
+            label: "mRNA Direction",
+            children: formatBooleanChip(
+                hasMrnaDirection,
+                "Directional",
+                "Non-directional"
             ),
+            span: 1,
+        },
+        {
+            key: "TotalRNACount",
+            label: "Total RNA Count",
+            children: totalRNACount,
             span: 2,
         },
         {
             key: "miRNACount",
             label: "miRNA Count",
-            children:
-                data.miRNA_count ??
-                data.mirna_count ??
-                getListCount(rnas.miRNA),
+            children: miRNACount,
             span: 1,
         },
         {
             key: "mRNACount",
             label: "mRNA Count",
-            children:
-                data.mRNA_count ??
-                data.mrna_count ??
-                getListCount(rnas.mRNA),
+            children: mRNACount,
             span: 1,
         },
         {
             key: "lncRNACount",
             label: "lncRNA Count",
-            children:
-                data.lncRNA_count ??
-                data.lncrna_count ??
-                getListCount(rnas.lncRNA),
+            children: lncRNACount,
             span: 1,
         },
         {
             key: "circRNACount",
             label: "circRNA Count",
-            children:
-                data.circRNA_count ??
-                data.circrna_count ??
-                getListCount(rnas.circRNA),
+            children: circRNACount,
             span: 1,
         },
     ];
+
+    if (data.map_info) {
+        items.splice(2, 0, {
+            key: "MapInfo",
+            label: "Legacy Immune Annotation File",
+            children: formatChipValue(
+                formatMapInfoLabel(data.map_info),
+                "blue"
+            ),
+            span: 1,
+        });
+    }
+
+    return items;
 };
 
 const generatePairedCohortTaskItems = (taskInformation) => {
