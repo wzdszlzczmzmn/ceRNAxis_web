@@ -78,13 +78,16 @@ const DatasetVolcanoAnalysisSection = ({
         })
     }, [availableDegExpressionTypes])
 
+    useEffect(() => {
+        setSearchGene("")
+    }, [queryConfig.expressionType])
+
     const {
         volcanoData,
         titlePrimary,
         titleSecondary,
         isLoading,
         isError,
-        mutate,
     } = useDatasetDegVolcano({
         dataset,
         expressionType: queryConfig.expressionType,
@@ -93,12 +96,32 @@ const DatasetVolcanoAnalysisSection = ({
     const geneSearchOptions = getGeneSearchOptions(volcanoData)
 
     const renderPlotContent = () => {
+        if (!dataset) {
+            return (
+                <EmptyView
+                    bordered
+                    description="Missing dataset"
+                    containerSx={{ height: "100%" }}
+                />
+            )
+        }
+
+        if (!queryConfig.expressionType) {
+            return (
+                <EmptyView
+                    bordered
+                    description="No available DEG expression type"
+                    containerSx={{ height: "100%" }}
+                />
+            )
+        }
+
         if (isLoading) {
-            return <LoadingView containerSx={{ height: "100%" }}/>
+            return <LoadingView containerSx={{ height: "100%" }} />
         }
 
         if (isError) {
-            return <ErrorView containerSx={{ height: "100%" }}/>
+            return <ErrorView containerSx={{ height: "100%" }} />
         }
 
         if (!hasVolcanoData(volcanoData)) {
@@ -118,7 +141,7 @@ const DatasetVolcanoAnalysisSection = ({
                 titleSecondary={titleSecondary}
                 height="100%"
                 logfcCutoff={0}
-                padjCutoff={0.20}
+                pvalueCutoff={0.05}
                 showLabels={visualConfig.showLabels}
                 labelTopN={visualConfig.labelTopN}
                 pointSize={visualConfig.pointSize}
@@ -143,7 +166,14 @@ const DatasetVolcanoAnalysisSection = ({
                     pb: "12px",
                 }}
             >
-                <Box component="h6" sx={{ fontSize: "36px", fontWeight: 700, m: 0 }}>
+                <Box
+                    component="h6"
+                    sx={{
+                        fontSize: "36px",
+                        fontWeight: 700,
+                        m: 0,
+                    }}
+                >
                     Expression Volcano Plot
                 </Box>
             </Stack>
@@ -191,7 +221,7 @@ const DatasetVolcanoAnalysisSection = ({
                             {isControlPanelCollapsed && (
                                 <Button
                                     size="small"
-                                    icon={<MenuUnfoldOutlined/>}
+                                    icon={<MenuUnfoldOutlined />}
                                     onClick={() => setIsControlPanelCollapsed(false)}
                                     style={{
                                         position: "absolute",

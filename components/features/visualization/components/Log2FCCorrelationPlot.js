@@ -18,6 +18,22 @@ const roundUpToStep = (value, step = 0.5) => {
     return Math.ceil(value / step) * step;
 };
 
+const getSymmetricAxisLimit = ({
+    values,
+    minLimit = 1,
+    paddingRatio = 1.15,
+    step = 0.5,
+}) => {
+    const rawMaxAbs = Math.max(
+        ...values
+            .map(value => Math.abs(Number(value)))
+            .filter(Number.isFinite),
+        minLimit
+    );
+
+    return roundUpToStep(rawMaxAbs * paddingRatio, step);
+};
+
 const getPlotGrid = ({
     containerWidth,
     containerHeight,
@@ -268,18 +284,24 @@ const Log2FCCorrelationPlotCore = ({
             })
             : [];
 
-        const rawMaxAbs = Math.max(
-            ...allPoints.map(item => Math.abs(item.ceRNA_log2FC)),
-            ...allPoints.map(item => Math.abs(item.miRNA_log2FC)),
-            1
-        );
+        const xLimit = getSymmetricAxisLimit({
+            values: allPoints.map(item => item.ceRNA_log2FC),
+            minLimit: 1,
+            paddingRatio: 1.15,
+            step: 0.5,
+        });
 
-        const limit = roundUpToStep(rawMaxAbs * 1.15, 0.5);
+        const yLimit = getSymmetricAxisLimit({
+            values: allPoints.map(item => item.miRNA_log2FC),
+            minLimit: 1,
+            paddingRatio: 1.15,
+            step: 0.5,
+        });
 
-        const xMin = -limit;
-        const xMax = limit;
-        const yMin = -limit;
-        const yMax = limit;
+        const xMin = -xLimit;
+        const xMax = xLimit;
+        const yMin = -yLimit;
+        const yMax = yLimit;
 
         const grid = getPlotGrid({
             containerWidth: width,

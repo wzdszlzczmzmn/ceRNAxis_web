@@ -41,11 +41,55 @@ const formatDegMethod = (method) => {
     );
 };
 
-const formatCutoff = (cutoff, logfcColor = "blue", padjColor = "orange") => {
+const formatBooleanChip = (value, trueLabel = "True", falseLabel = "False") => {
+    if (value === undefined || value === null) {
+        return "--";
+    }
+
+    return (
+        <BasicChip
+            value={value ? trueLabel : falseLabel}
+            color={value ? "green" : "orange"}
+        />
+    );
+};
+
+const formatUsePadj = (usePadj) => {
+    if (usePadj === undefined || usePadj === null) {
+        return "--";
+    }
+
+    return (
+        <BasicChip
+            value={usePadj ? "Adjusted p-value" : "Raw p-value"}
+            color={usePadj ? "green" : "orange"}
+        />
+    );
+};
+
+const formatUploadedRnaTypes = (rnaTypes = []) => {
+    if (!Array.isArray(rnaTypes) || rnaTypes.length === 0) {
+        return "--";
+    }
+
+    return (
+        <Space size={6} wrap>
+            {rnaTypes.map(rnaType => (
+                <BasicChip
+                    key={rnaType}
+                    value={rnaType}
+                    color="blue"
+                />
+            ))}
+        </Space>
+    );
+};
+
+const formatCutoff = (cutoff, logfcColor = "blue", pvalueColor = "orange") => {
     if (!cutoff) return "--";
 
     const logfc = cutoff.logfc_cutoff ?? "--";
-    const padj = cutoff.padj_cutoff ?? "--";
+    const pvalue = cutoff.pvalue_cutoff ?? "--";
 
     return (
         <Space size={6} wrap>
@@ -55,8 +99,8 @@ const formatCutoff = (cutoff, logfcColor = "blue", padjColor = "orange") => {
             />
 
             <BasicChip
-                value={`padj ≤ ${padj}`}
-                color={padjColor}
+                value={`p-value ≤ ${pvalue}`}
+                color={pvalueColor}
             />
         </Space>
     );
@@ -174,10 +218,26 @@ const generateCustomListQueryTaskItems = (taskInformation) => {
 const generatePairedCohortTaskItems = (taskInformation) => {
     const data = getTaskData(taskInformation);
 
-    const files = data.files ?? {};
     const cutoffs = data.cutoffs ?? {};
+    const uploadedRnaTypes = Array.isArray(data.uploaded_rna_types)
+        ? data.uploaded_rna_types
+        : [];
 
-    return [
+    const hasLncrnaFile =
+        data.has_lncrna_file !== undefined && data.has_lncrna_file !== null
+            ? data.has_lncrna_file
+            : uploadedRnaTypes.length > 0
+                ? uploadedRnaTypes.includes("lncRNA")
+                : Boolean(data.files?.lncrna_file);
+
+    const hasCircrnaFile =
+        data.has_circrna_file !== undefined && data.has_circrna_file !== null
+            ? data.has_circrna_file
+            : uploadedRnaTypes.length > 0
+                ? uploadedRnaTypes.includes("circRNA")
+                : Boolean(data.files?.circrna_file);
+
+    const items = [
         {
             key: "TaskName",
             label: "Task Name",
@@ -200,6 +260,24 @@ const generatePairedCohortTaskItems = (taskInformation) => {
             span: 1,
         },
         {
+            key: "CancerType",
+            label: "Cancer Type",
+            children: formatChipValue(data.cancer_type || "None", "purple"),
+            span: 1,
+        },
+        {
+            key: "UsePadj",
+            label: "P-value Type",
+            children: formatUsePadj(data.use_padj),
+            span: 1,
+        },
+        {
+            key: "UploadedRnaTypes",
+            label: "Uploaded RNA Types",
+            children: formatUploadedRnaTypes(uploadedRnaTypes),
+            span: 2,
+        },
+        {
             key: "mRNACutoff",
             label: "mRNA DEG Cutoff",
             children: formatCutoff(cutoffs.mRNA),
@@ -211,24 +289,100 @@ const generatePairedCohortTaskItems = (taskInformation) => {
             children: formatCutoff(cutoffs.miRNA),
             span: 2,
         },
-        {
+    ];
+
+    if (hasLncrnaFile) {
+        items.push({
             key: "lncRNACutoff",
             label: "lncRNA DEG Cutoff",
             children: formatCutoff(cutoffs.lncRNA),
             span: 2,
-        },
-        {
+        });
+    }
+
+    if (hasCircrnaFile) {
+        items.push({
             key: "circRNACutoff",
             label: "circRNA DEG Cutoff",
             children: formatCutoff(cutoffs.circRNA),
             span: 2,
-        }
+        });
+    }
+
+    return items;
+};
+
+const generateHybridReferenceTaskItems = (taskInformation) => {
+    const data = getTaskData(taskInformation);
+
+    const cutoffs = data.cutoffs ?? {};
+    const uploadedRnaTypes = Array.isArray(data.uploaded_rna_types)
+        ? data.uploaded_rna_types
+        : [];
+
+    return [
+        {
+            key: "TaskName",
+            label: "Task Name",
+            children: data.task_name || "--",
+            span: 2,
+        },
+        {
+            key: "MapInfo",
+            label: "Immune Annotation File",
+            children: formatChipValue(
+                formatMapInfoLabel(data.map_info),
+                "blue"
+            ),
+            span: 1,
+        },
+        {
+            key: "TCGAType",
+            label: "TCGA Reference Type",
+            children: formatChipValue(data.tcga_type, "purple"),
+            span: 1,
+        },
+        {
+            key: "LncRNAType",
+            label: "lncRNA Reference Value Type",
+            children: formatChipValue(data.lncrna_type, "cyan"),
+            span: 1,
+        },
+        {
+            key: "DEGMethod",
+            label: "DEG Method",
+            children: formatDegMethod(data.deg_method),
+            span: 1,
+        },
+        {
+            key: "UsePadj",
+            label: "P-value Type",
+            children: formatUsePadj(data.use_padj),
+            span: 1,
+        },
+        {
+            key: "UploadedRnaTypes",
+            label: "Uploaded RNA Types",
+            children: formatUploadedRnaTypes(uploadedRnaTypes),
+            span: 1,
+        },
+        {
+            key: "mRNACutoff",
+            label: "mRNA DEG Cutoff",
+            children: formatCutoff(
+                cutoffs.mRNA,
+                "blue",
+                data.use_padj ? "green" : "orange"
+            ),
+            span: 2,
+        },
     ];
 };
 
 const TASK_INFORMATION_ITEM_GENERATOR_MAP = {
     CustomListQueryTask: generateCustomListQueryTaskItems,
     PairedCohortTask: generatePairedCohortTaskItems,
+    HybridReferenceTask: generateHybridReferenceTaskItems,
 };
 
 export const generateTaskInformationItems = (taskInformation) => {

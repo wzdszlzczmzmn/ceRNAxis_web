@@ -8,7 +8,7 @@ import { FILTER_LABEL_MAP } from "./datasetMetadataConfig"
 const DEFAULT_ACTIVE_FILTER_KEYS = [
     "programme",
     "reference",
-    "cancer_type",
+    "obs_type",
 ]
 
 const DatasetMetadataFilterCollapse = ({

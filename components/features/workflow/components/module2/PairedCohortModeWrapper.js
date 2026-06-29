@@ -45,11 +45,51 @@ const { Text, Link: AntLink } = Typography;
 const TASK_NAME_PATTERN = /^[A-Za-z0-9_-]+$/;
 const TASK_NAME_MAX_LENGTH = 64;
 
+const CANCER_TYPE_OPTIONS = [
+    "MEL",
+    "LUAD",
+    "OS",
+    "STAD",
+    "BRCA",
+    "CRC",
+    "NSCLC",
+    "OV",
+    "LUSC",
+    "UCEC",
+    "CESC",
+    "HCC",
+    "AML",
+    "ALL",
+    "PRAD",
+    "SCLC",
+    "NBL",
+    "MM",
+    "Lymphoma",
+    "PAAD",
+    "",
+].map(value => ({
+    label: value || "None",
+    value,
+}));
+
+const USE_PADJ_OPTIONS = [
+    {
+        label: "Use adjusted p-value",
+        value: true,
+    },
+    {
+        label: "Use raw p-value",
+        value: false,
+    },
+];
+
 const initialWorkflowParams = {
     taskName: "",
     mapInfo: undefined,
 
     degMethod: "limma",
+    cancerType: "",
+    usePadj: true,
 
     logfcCutoffMrna: 1,
     padjCutoffMrna: 0.05,
@@ -77,6 +117,8 @@ const demoWorkflowParams = {
     mapInfo: "ImmiRImmiR_ACC",
 
     degMethod: "limma",
+    cancerType: "LUAD",
+    usePadj: true,
 
     logfcCutoffMrna: 1,
     padjCutoffMrna: 0.1,
@@ -206,18 +248,25 @@ const Module2SubmitWrapper = () => {
             return false;
         }
 
-        if (!files.lncrnaFile) {
-            messageApi.error("lncRNA expression file is required.");
-            return false;
-        }
-
-        if (!files.circrnaFile) {
-            messageApi.error("circRNA expression file is required.");
+        if (!files.lncrnaFile && !files.circrnaFile) {
+            messageApi.error("At least one of lncRNA or circRNA expression file is required.");
             return false;
         }
 
         if (!files.metaFile) {
             messageApi.error("Sample meta file is required.");
+            return false;
+        }
+
+        const validCancerTypes = CANCER_TYPE_OPTIONS.map(option => option.value);
+
+        if (!validCancerTypes.includes(workflowParams.cancerType)) {
+            messageApi.error("Invalid cancer type.");
+            return false;
+        }
+
+        if (typeof workflowParams.usePadj !== "boolean") {
+            messageApi.error("use_padj must be true or false.");
             return false;
         }
 
@@ -232,11 +281,20 @@ const Module2SubmitWrapper = () => {
 
         formData.append("mrna_file", files.mrnaFile.originFileObj);
         formData.append("mirna_file", files.mirnaFile.originFileObj);
-        formData.append("lncrna_file", files.lncrnaFile.originFileObj);
-        formData.append("circrna_file", files.circrnaFile.originFileObj);
+
+        if (files.lncrnaFile) {
+            formData.append("lncrna_file", files.lncrnaFile.originFileObj);
+        }
+
+        if (files.circrnaFile) {
+            formData.append("circrna_file", files.circrnaFile.originFileObj);
+        }
+
         formData.append("meta_file", files.metaFile.originFileObj);
 
         formData.append("deg_method", workflowParams.degMethod);
+        formData.append("cancer_type", workflowParams.cancerType ?? "");
+        formData.append("use_padj", String(workflowParams.usePadj));
 
         formData.append(
             "logfc_cutoff_mrna",
@@ -427,7 +485,7 @@ const Module2SubmitWrapper = () => {
                             danger
                             icon={<FileSearchOutlined />}
                             disabled={isSubmitting}
-                            href='/workspace/detail?taskId=3603a460-1972-4771-b3e0-21e05f00d9c8'
+                            href='/workspace/detail?taskId=2c09007c-e03e-43bb-a126-4757dd1326be'
                             target='_blank'
                         >
                             View Demo Result
@@ -481,10 +539,10 @@ const Module2SubmitWrapper = () => {
                     }
                     description={
                         <Box component="span" sx={{ fontSize: "14px" }}>
-                            Expression matrix files include <b>mRNA</b>, <b>miRNA</b>,{" "}
-                            <b>lncRNA</b> and <b>circRNA</b>. All expression matrix files and
-                            meta file should follow the platform-defined format. The backend will
-                            use fixed columns:
+                            Expression matrix files require <b>mRNA</b> and <b>miRNA</b>.{" "}
+                            At least one of <b>lncRNA</b> or <b>circRNA</b> must be provided.
+                            All expression matrix files and meta file should follow the
+                            platform-defined format. The backend will use fixed columns:
                             <Box component="ul" sx={{ mb: 0 }}>
                                 <li>
                                     Expression sample column: <b>sample_id</b>
@@ -500,6 +558,9 @@ const Module2SubmitWrapper = () => {
                                 </li>
                                 <li>
                                     Control label: <b>control</b>
+                                </li>
+                                <li>
+                                    lncRNA / circRNA rule: <b>at least one is required</b>
                                 </li>
                             </Box>
                         </Box>
@@ -689,7 +750,7 @@ const Module2SubmitWrapper = () => {
                             <Box sx={{ flex: 1 }}>
                                 <Form.Item
                                     label="lncRNA expression matrix"
-                                    required
+                                    extra="Optional if circRNA expression matrix is provided."
                                 >
                                     <Dragger
                                         {...makeSingleFileUploadProps({
@@ -700,13 +761,13 @@ const Module2SubmitWrapper = () => {
                                         })}
                                     >
                                         <p className="ant-upload-drag-icon">
-                                            <InboxOutlined />
+                                            <InboxOutlined/>
                                         </p>
                                         <p className="ant-upload-text">
                                             Click or drag lncRNA file to upload
                                         </p>
                                         <p className="ant-upload-hint">
-                                            Supported: CSV
+                                            Supported: CSV. Required only when circRNA is not provided.
                                         </p>
                                     </Dragger>
                                 </Form.Item>
@@ -715,7 +776,7 @@ const Module2SubmitWrapper = () => {
                             <Box sx={{ flex: 1 }}>
                                 <Form.Item
                                     label="circRNA expression matrix"
-                                    required
+                                    extra="Optional if lncRNA expression matrix is provided."
                                 >
                                     <Dragger
                                         {...makeSingleFileUploadProps({
@@ -726,13 +787,13 @@ const Module2SubmitWrapper = () => {
                                         })}
                                     >
                                         <p className="ant-upload-drag-icon">
-                                            <InboxOutlined />
+                                            <InboxOutlined/>
                                         </p>
                                         <p className="ant-upload-text">
                                             Click or drag circRNA file to upload
                                         </p>
                                         <p className="ant-upload-hint">
-                                            Supported: CSV
+                                            Supported: CSV. Required only when lncRNA is not provided.
                                         </p>
                                     </Dragger>
                                 </Form.Item>
@@ -818,6 +879,53 @@ const Module2SubmitWrapper = () => {
                                                 spacing={3}
                                             >
                                                 <Form.Item
+                                                    label="Cancer type"
+                                                    name="cancerType"
+                                                    style={{ flex: 1 }}
+                                                    tooltip="Used to filter matching cancer-relevant cell lines. Empty means no cancer-type filtering."
+                                                >
+                                                    <Select
+                                                        disabled={isSubmitting}
+                                                        value={workflowParams.cancerType}
+                                                        onChange={(value) =>
+                                                            updateWorkflowParams({
+                                                                cancerType: value,
+                                                            })
+                                                        }
+                                                        options={CANCER_TYPE_OPTIONS}
+                                                        showSearch
+                                                        optionFilterProp="label"
+                                                    />
+                                                </Form.Item>
+
+                                                <Form.Item
+                                                    label="Use adjusted p-value"
+                                                    name="usePadj"
+                                                    required
+                                                    style={{ flex: 1 }}
+                                                    tooltip="If true, adjusted p-value will be used as the primary DEG filtering criterion. If false, raw p-value will be used."
+                                                >
+                                                    <Select
+                                                        disabled={isSubmitting}
+                                                        value={workflowParams.usePadj}
+                                                        onChange={(value) =>
+                                                            updateWorkflowParams({
+                                                                usePadj: value,
+                                                            })
+                                                        }
+                                                        options={USE_PADJ_OPTIONS}
+                                                    />
+                                                </Form.Item>
+                                            </Stack>
+
+                                            <Stack
+                                                direction={{
+                                                    xs: "column",
+                                                    md: "row",
+                                                }}
+                                                spacing={3}
+                                            >
+                                                <Form.Item
                                                     label="mRNA log2FC cutoff"
                                                     name="logfcCutoffMrna"
                                                     required
@@ -841,7 +949,7 @@ const Module2SubmitWrapper = () => {
                                                 </Form.Item>
 
                                                 <Form.Item
-                                                    label="mRNA adjusted p-value cutoff"
+                                                    label="mRNA p-value cutoff"
                                                     name="padjCutoffMrna"
                                                     required
                                                     style={{ flex: 1 }}
@@ -896,7 +1004,7 @@ const Module2SubmitWrapper = () => {
                                                 </Form.Item>
 
                                                 <Form.Item
-                                                    label="miRNA adjusted p-value cutoff"
+                                                    label="miRNA p-value cutoff"
                                                     name="padjCutoffMirna"
                                                     required
                                                     style={{ flex: 1 }}
@@ -951,7 +1059,7 @@ const Module2SubmitWrapper = () => {
                                                 </Form.Item>
 
                                                 <Form.Item
-                                                    label="lncRNA adjusted p-value cutoff"
+                                                    label="lncRNA p-value cutoff"
                                                     name="padjCutoffLncrna"
                                                     required
                                                     style={{ flex: 1 }}
@@ -1005,7 +1113,7 @@ const Module2SubmitWrapper = () => {
                                                 </Form.Item>
 
                                                 <Form.Item
-                                                    label="circRNA adjusted p-value cutoff"
+                                                    label="circRNA p-value cutoff"
                                                     name="padjCutoffCircrna"
                                                     required
                                                     style={{ flex: 1 }}

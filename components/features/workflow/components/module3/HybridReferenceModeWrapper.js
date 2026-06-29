@@ -90,6 +90,17 @@ const LNCRNA_TYPE_OPTIONS = [
     { label: "log2tpm", value: "log2tpm" },
 ];
 
+const USE_PADJ_OPTIONS = [
+    {
+        label: "Use adjusted p-value",
+        value: true,
+    },
+    {
+        label: "Use raw p-value",
+        value: false,
+    },
+];
+
 const initialWorkflowParams = {
     taskName: "",
     tcgaType: undefined,
@@ -97,6 +108,7 @@ const initialWorkflowParams = {
     mapInfo: undefined,
 
     degMethod: "limma",
+    usePadj: false,
 
     logfcCutoffMrna: 1,
     padjCutoffMrna: 0.05,
@@ -114,6 +126,7 @@ const demoWorkflowParams = {
     mapInfo: "ImmiRImmiR_ACC",
 
     degMethod: "limma",
+    usePadj: true,
 
     logfcCutoffMrna: 1,
     padjCutoffMrna: 0.05,
@@ -244,6 +257,11 @@ const HybridReferenceModeWrapper = () => {
             return false;
         }
 
+        if (typeof workflowParams.usePadj !== "boolean") {
+            messageApi.error("use_padj must be true or false.");
+            return false;
+        }
+
         return true;
     };
 
@@ -259,6 +277,7 @@ const HybridReferenceModeWrapper = () => {
         formData.append("meta_file", files.metaFile.originFileObj);
 
         formData.append("deg_method", workflowParams.degMethod);
+        formData.append("use_padj", String(workflowParams.usePadj));
 
         formData.append(
             "logfc_cutoff_mrna",
@@ -351,11 +370,11 @@ const HybridReferenceModeWrapper = () => {
     };
 
     if (isImmuneMapLoading) {
-        return <LoadingView containerSx={{ height: "420px" }} />;
+        return <LoadingView containerSx={{ height: "420px" }}/>;
     }
 
     if (isImmuneMapError) {
-        return <ErrorView containerSx={{ height: "420px" }} />;
+        return <ErrorView containerSx={{ height: "420px" }}/>;
     }
 
     if (!immuneMapOptions.length) {
@@ -406,12 +425,12 @@ const HybridReferenceModeWrapper = () => {
                         />
                     </Stack>
 
-                    <Divider />
+                    <Divider/>
 
                     <Space wrap>
                         <Button
                             type="primary"
-                            icon={<ExperimentOutlined />}
+                            icon={<ExperimentOutlined/>}
                             disabled={isSubmitting}
                             onClick={handleRunDemo}
                         >
@@ -420,9 +439,9 @@ const HybridReferenceModeWrapper = () => {
 
                         <Button
                             danger
-                            icon={<FileSearchOutlined />}
+                            icon={<FileSearchOutlined/>}
                             disabled={isSubmitting}
-                            href="/workspace/detail?taskId=YOUR_MODULE3_DEMO_UUID"
+                            href="/workspace/detail?taskId=3198c38c-6a01-412c-b12c-0610ee1a06b0"
                             target="_blank"
                         >
                             View Demo Result
@@ -436,7 +455,7 @@ const HybridReferenceModeWrapper = () => {
 
                         <Button
                             type="primary"
-                            icon={<QuestionCircleOutlined />}
+                            icon={<QuestionCircleOutlined/>}
                             disabled={isSubmitting}
                         >
                             Submission Help
@@ -444,7 +463,7 @@ const HybridReferenceModeWrapper = () => {
 
                         <Button
                             danger
-                            icon={<FileExcelOutlined />}
+                            icon={<FileExcelOutlined/>}
                             onClick={handleLoadDemoInput}
                             disabled={isSubmitting}
                             href="/workflow/demoFiles?task_type=HybridReferenceTask"
@@ -495,6 +514,13 @@ const HybridReferenceModeWrapper = () => {
                                 </li>
                                 <li>
                                     Control label: <b>control</b>
+                                </li>
+                                <li>
+                                    Cancer type: used to filter matching cancer-relevant cell lines.
+                                </li>
+                                <li>
+                                    use_padj: if <b>TRUE</b>, adjusted p-value is used for DEG filtering;
+                                    if <b>FALSE</b>, raw p-value is used.
                                 </li>
                             </Box>
                         </Box>
@@ -715,7 +741,7 @@ const HybridReferenceModeWrapper = () => {
                                         })}
                                     >
                                         <p className="ant-upload-drag-icon">
-                                            <InboxOutlined />
+                                            <InboxOutlined/>
                                         </p>
                                         <p className="ant-upload-text">
                                             Click or drag mRNA file to upload
@@ -741,7 +767,7 @@ const HybridReferenceModeWrapper = () => {
                                         })}
                                     >
                                         <p className="ant-upload-drag-icon">
-                                            <InboxOutlined />
+                                            <InboxOutlined/>
                                         </p>
                                         <p className="ant-upload-text">
                                             Click or drag meta file to upload
@@ -789,6 +815,25 @@ const HybridReferenceModeWrapper = () => {
                                                 />
                                             </Form.Item>
 
+                                            <Form.Item
+                                                label="Use adjusted p-value"
+                                                name="usePadj"
+                                                required
+                                                style={{ flex: 1 }}
+                                                tooltip="If true, adjusted p-value will be used as the primary DEG filtering criterion. If false, raw p-value will be used."
+                                            >
+                                                <Select
+                                                    disabled={isSubmitting}
+                                                    value={workflowParams.usePadj}
+                                                    onChange={(value) =>
+                                                        updateWorkflowParams({
+                                                            usePadj: value,
+                                                        })
+                                                    }
+                                                    options={USE_PADJ_OPTIONS}
+                                                />
+                                            </Form.Item>
+
                                             <Stack
                                                 direction={{
                                                     xs: "column",
@@ -819,7 +864,7 @@ const HybridReferenceModeWrapper = () => {
                                                 </Form.Item>
 
                                                 <Form.Item
-                                                    label="mRNA adjusted p-value cutoff"
+                                                    label="mRNA p-value cutoff"
                                                     name="padjCutoffMrna"
                                                     required
                                                     style={{ flex: 1 }}
@@ -847,7 +892,7 @@ const HybridReferenceModeWrapper = () => {
                             ]}
                         />
 
-                        <Divider />
+                        <Divider/>
 
                         <Space>
                             <Button

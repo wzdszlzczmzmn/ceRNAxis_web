@@ -6,10 +6,13 @@ import EmptyView from "@/components/common/status/EmptyView";
 import { useTaskDetail } from "@/components/features/workspace/hooks/useTaskDetail";
 import CustomListQueryDetail from "@/components/features/workspace/components/detail/CustomListQuery/CustomListQueryDetail";
 import PairedCohortDetail from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortDetail"
+import HybridReferenceDetail
+    from "@/components/features/workspace/components/detail/HybridReference/HybridReferenceDetail"
 
 const TASK_DETAIL_COMPONENT_MAP = {
     CustomListQueryTask: CustomListQueryDetail,
     PairedCohortTask: PairedCohortDetail,
+    HybridReferenceTask: HybridReferenceDetail
 };
 
 const TaskDetail = () => {

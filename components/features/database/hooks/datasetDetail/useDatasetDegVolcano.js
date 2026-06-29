@@ -17,26 +17,55 @@ const EMPTY_GROUPS = {
     Up: [],
 }
 
-export const useDatasetDegVolcano = ({ dataset, expressionType }) => {
-    const url = getDatasetDegVolcanoURL({
-        dataset,
-        expressionType,
+const GROUPS = ["NotSig", "Down", "Up"]
+
+const normalizeVolcanoData = data => {
+    if (!data) return null
+
+    const normalizedGroups = {}
+
+    GROUPS.forEach(group => {
+        normalizedGroups[group] = (data.groups?.[group] || []).map(item => ({
+            gene_name: item.gene_name,
+            log2FC: item.log2FC,
+            pvalue: item.pvalue,
+            neg_log10_pvalue: item.neg_log10_pvalue,
+        }))
     })
+
+    return {
+        ...data,
+        summary: data.summary ?? EMPTY_SUMMARY,
+        groups: normalizedGroups,
+    }
+}
+
+export const useDatasetDegVolcano = ({ dataset, expressionType }) => {
+    const shouldFetch = Boolean(dataset && expressionType)
+
+    const url = shouldFetch
+        ? getDatasetDegVolcanoURL({
+            dataset,
+            expressionType,
+        })
+        : null
 
     const { data, error, isLoading, mutate } = useSWR(url, fetcher)
 
+    const volcanoData = normalizeVolcanoData(data)
+
     return {
-        volcanoData: data ?? null,
+        volcanoData,
 
-        dataset: data?.dataset ?? dataset ?? null,
-        rnaType: data?.rna_type ?? null,
-        expressionType: data?.expression_type ?? expressionType ?? null,
+        dataset: volcanoData?.dataset ?? dataset ?? null,
+        rnaType: volcanoData?.rna_type ?? null,
+        expressionType: volcanoData?.expression_type ?? expressionType ?? null,
 
-        titlePrimary: data?.dataset ?? dataset ?? null,
-        titleSecondary: data?.expression_type ?? expressionType ?? null,
+        titlePrimary: volcanoData?.dataset ?? dataset ?? null,
+        titleSecondary: volcanoData?.expression_type ?? expressionType ?? null,
 
-        summary: data?.summary ?? EMPTY_SUMMARY,
-        groups: data?.groups ?? EMPTY_GROUPS,
+        summary: volcanoData?.summary ?? EMPTY_SUMMARY,
+        groups: volcanoData?.groups ?? EMPTY_GROUPS,
 
         isLoading,
         isError: error,

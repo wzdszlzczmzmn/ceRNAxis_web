@@ -82,6 +82,7 @@ const DatasetVolcanoControlPanel = ({
                             label: type,
                             value: type,
                         }))}
+                        disabled={availableDegExpressionTypes.length === 0}
                         onChange={value =>
                             setQueryConfig(prev => ({
                                 ...prev,
@@ -132,7 +133,7 @@ const DatasetVolcanoControlPanel = ({
 
                 <ControlField
                     label="Label top N"
-                    tooltip="Number of most significant non-NotSig genes to display as text labels, ranked by adjusted p-value."
+                    tooltip="Number of most significant non-NotSig genes to display as text labels, ranked by p-value."
                 >
                     <InputNumber
                         min={0}

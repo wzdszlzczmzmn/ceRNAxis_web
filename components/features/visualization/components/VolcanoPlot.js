@@ -93,8 +93,12 @@ const buildTooltipRow = ({ label, value }) => {
     `
 }
 
-const formatPadj = value => {
+const formatPvalue = value => {
     const number = Number(value)
+
+    if (!Number.isFinite(number)) {
+        return "-"
+    }
 
     if (number < 0.001) {
         return number.toExponential(3)
@@ -103,7 +107,10 @@ const formatPadj = value => {
     return number.toFixed(4)
 }
 
-const formatVolcanoTooltip = item => {
+const formatVolcanoTooltip = ({
+    item,
+    pvalueLabel = "p-value",
+}) => {
     if (!item) return ""
 
     return `
@@ -132,24 +139,24 @@ const formatVolcanoTooltip = item => {
                 "
             >
                 ${buildTooltipRow({
-                    label: "Regulation",
-                    value: item.regulation,
-                })}
+        label: "Regulation",
+        value: item.regulation,
+    })}
 
                 ${buildTooltipRow({
-                    label: "log2FC",
-                    value: Number(item.log2FC).toFixed(4),
-                })}
+        label: "log2FC",
+        value: Number(item.log2FC).toFixed(4),
+    })}
 
                 ${buildTooltipRow({
-                    label: "padj",
-                    value: formatPadj(item.padj),
-                })}
+        label: pvalueLabel,
+        value: formatPvalue(item.pvalue),
+    })}
 
                 ${buildTooltipRow({
-                    label: "-log10(padj)",
-                    value: Number(item.neg_log10_padj).toFixed(4),
-                })}
+        label: `-log10(${pvalueLabel})`,
+        value: Number(item.neg_log10_pvalue).toFixed(4),
+    })}
             </table>
         </div>
     `
@@ -161,7 +168,9 @@ const VolcanoPlotCore = ({
     titlePrimary = null,
     titleSecondary = null,
     logfcCutoff = 1,
-    padjCutoff = 0.05,
+    pvalueCutoff = 0.05,
+    pvalueLabel = "p-value",
+    pvalueShortLabel = "p-value",
     showLabels = true,
     labelTopN = 10,
     pointSize = 7,
@@ -184,25 +193,27 @@ const VolcanoPlotCore = ({
 
         const safeLogfcCutoff = Math.abs(getSafeNumber(logfcCutoff, 1))
 
-        const rawPadjCutoff = getSafeNumber(padjCutoff, 0.05)
-        const safePadjCutoff = rawPadjCutoff > 0 ? rawPadjCutoff : 0.05
+        const rawPvalueCutoff = getSafeNumber(pvalueCutoff, 0.05)
+        const safePvalueCutoff = rawPvalueCutoff > 0
+            ? rawPvalueCutoff
+            : 0.05
 
-        const thresholdY = -Math.log10(safePadjCutoff)
+        const thresholdY = -Math.log10(safePvalueCutoff)
 
         const allPoints = GROUP_ORDER.flatMap(group =>
             (data.groups[group] || []).map(item => ({
                 ...item,
                 regulation: group,
                 log2FC: getSafeNumber(item.log2FC),
-                padj: getSafeNumber(item.padj),
-                neg_log10_padj: getSafeNumber(item.neg_log10_padj),
+                pvalue: getSafeNumber(item.pvalue),
+                neg_log10_pvalue: getSafeNumber(item.neg_log10_pvalue),
             }))
         )
 
         const labelGenes = showLabels
             ? allPoints
                 .filter(item => item.regulation !== "NotSig")
-                .sort((a, b) => a.padj - b.padj)
+                .sort((a, b) => a.pvalue - b.pvalue)
                 .slice(0, labelTopN)
             : []
 
@@ -217,7 +228,7 @@ const VolcanoPlotCore = ({
 
         const maxY = Math.max(
             thresholdY,
-            ...allPoints.map(item => item.neg_log10_padj)
+            ...allPoints.map(item => item.neg_log10_pvalue)
         )
 
         const yMax = roundUpOneDecimal(maxY + 0.1)
@@ -246,7 +257,10 @@ const VolcanoPlotCore = ({
             tooltip: {
                 trigger: "item",
                 formatter: params => {
-                    return formatVolcanoTooltip(params.data?.raw)
+                    return formatVolcanoTooltip({
+                        item: params.data?.raw,
+                        pvalueLabel,
+                    })
                 },
             },
 
@@ -296,7 +310,7 @@ const VolcanoPlotCore = ({
                         color: "#999",
                         width: 1,
                     },
-                }
+                },
             },
 
             yAxis: {
@@ -313,7 +327,7 @@ const VolcanoPlotCore = ({
                 },
                 min: -0.1,
                 max: yMax,
-                name: "-log10 adjusted p-value",
+                name: `-log10 ${pvalueShortLabel}`,
                 nameLocation: "middle",
                 nameGap: 50,
                 splitLine: {
@@ -344,17 +358,19 @@ const VolcanoPlotCore = ({
                         },
                         data: groupData.map(item => {
                             const log2FC = getSafeNumber(item.log2FC)
-                            const padj = getSafeNumber(item.padj)
-                            const negLog10Padj = getSafeNumber(item.neg_log10_padj)
+                            const pvalue = getSafeNumber(item.pvalue)
+                            const negLog10Pvalue = getSafeNumber(
+                                item.neg_log10_pvalue
+                            )
 
                             return {
-                                value: [log2FC, negLog10Padj],
+                                value: [log2FC, negLog10Pvalue],
                                 raw: {
                                     ...item,
                                     regulation: group,
                                     log2FC,
-                                    padj,
-                                    neg_log10_padj: negLog10Padj,
+                                    pvalue,
+                                    neg_log10_pvalue: negLog10Pvalue,
                                 },
                                 label: {
                                     show:
@@ -420,13 +436,16 @@ const VolcanoPlotCore = ({
                                 borderRadius: 3,
                             },
                             data: highlightPoints.map(item => ({
-                                value: [item.log2FC, item.neg_log10_padj],
+                                value: [
+                                    item.log2FC,
+                                    item.neg_log10_pvalue,
+                                ],
                                 raw: item,
                             })),
                         },
                     ]
-                    : [])
-            ]
+                    : []),
+            ],
         }
     }, [
         data,
@@ -434,7 +453,7 @@ const VolcanoPlotCore = ({
         titlePrimary,
         titleSecondary,
         logfcCutoff,
-        padjCutoff,
+        pvalueCutoff,
         showLabels,
         labelTopN,
         pointSize,
@@ -443,6 +462,8 @@ const VolcanoPlotCore = ({
         width,
         height,
         highlightGene,
+        pvalueLabel,
+        pvalueShortLabel
     ])
 
     useEffect(() => {
@@ -468,7 +489,7 @@ const VolcanoPlotCore = ({
         chartInstanceRef.current.resize()
     }, [width, height])
 
-    return <div ref={chartRef} style={{ width: "100%", height: "100%" }}/>
+    return <div ref={chartRef} style={{ width: "100%", height: "100%" }} />
 }
 
 const VolcanoPlot = ({
@@ -477,7 +498,9 @@ const VolcanoPlot = ({
     titlePrimary = null,
     titleSecondary = null,
     logfcCutoff = 1,
-    padjCutoff = 0.05,
+    pvalueCutoff = 0.05,
+    pvalueLabel = "p-value",
+    pvalueShortLabel = "p-value",
     showLabels = true,
     labelTopN = 10,
     pointSize = 7,
@@ -502,7 +525,9 @@ const VolcanoPlot = ({
                 titlePrimary={titlePrimary}
                 titleSecondary={titleSecondary}
                 logfcCutoff={logfcCutoff}
-                padjCutoff={padjCutoff}
+                pvalueCutoff={pvalueCutoff}
+                pvalueLabel={pvalueLabel}
+                pvalueShortLabel={pvalueShortLabel}
                 showLabels={showLabels}
                 labelTopN={labelTopN}
                 pointSize={pointSize}
