@@ -83,6 +83,7 @@ const TCGADatasetDetailContent = ({
     availableDegExpressionTypes,
 }) => {
     const rnaType = metadata?.gene_bio_type ?? null
+    const showAliquotExpressionFileDescriptions = rnaType !== "circRNA"
 
     return (
         <Stack spacing={6} sx={{ pt: "12px", px: "32px" }}>
@@ -93,7 +94,9 @@ const TCGADatasetDetailContent = ({
                 expressionMode="tcga"
             />
 
-            <AliquotExpressionFileDescriptions dataset={dataset}/>
+            {showAliquotExpressionFileDescriptions && (
+                <AliquotExpressionFileDescriptions dataset={dataset}/>
+            )}
 
             <ExpressionDataSection
                 dataset={dataset}
