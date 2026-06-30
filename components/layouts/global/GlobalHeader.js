@@ -90,7 +90,7 @@ const menuItems = [
         children: [
             {
                 key: 'g1',
-                label: 'Expression Dataset',
+                label: 'Expression Datasets',
                 type: 'group',
                 children: [
                     {
@@ -117,7 +117,7 @@ const menuItems = [
             },
             {
                 key: 'g2',
-                label: 'Interaction Network',
+                label: 'Background Network',
                 type: 'group',
                 children: [
                     {

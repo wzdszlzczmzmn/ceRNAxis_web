@@ -13,24 +13,6 @@ const TEXT_DARK = "#202124"
 const TEXT_MUTED = "#6B7583"
 const BUTTON_LIGHT_BG = "#F5F8FC"
 
-const statRows = [
-    [
-        { value: "[N]", label: "miRNA–mRNA interactions" },
-        { value: "[N]", label: "miRNA–lncRNA interactions" },
-        { value: "[N]", label: "miRNA–circRNA interactions" },
-    ],
-    [
-        { value: "[N]", label: "cohorts" },
-        { value: "[N]", label: "cancer types" },
-        { value: "[N]", label: "cohort-specific ceRNA axes" },
-    ],
-    [
-        { value: "[N]", label: "bulk samples" },
-        { value: "[N]", label: "single cells" },
-        { value: "[N]", label: "spatial spots" },
-    ],
-]
-
 const HomeIntroduction = ({}) => (
     <Box
         component="section"
@@ -145,83 +127,6 @@ const HomeIntroduction = ({}) => (
                         repurposing, and sponge evidence, enabling context-aware discovery and prioritization of
                         actionable ceRNA regulatory hypotheses.
                     </Box>
-
-                    <Stack
-                        spacing={{
-                            xs: 1.5,
-                            md: 2,
-                        }}
-                        alignItems="center"
-                        sx={{
-                            width: "100%",
-                            maxWidth: 1200,
-                        }}
-                    >
-                        {statRows.map((row, rowIndex) => (
-                            <Box
-                                key={rowIndex}
-                                sx={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    justifyContent: "center",
-                                    gap: {
-                                        xs: "12px",
-                                        md: "16px",
-                                    },
-                                    width: "100%",
-                                }}
-                            >
-                                {row.map((item) => (
-                                    <Box
-                                        key={item.label}
-                                        sx={{
-                                            width: {
-                                                xs: "calc(50% - 6px)",
-                                                sm: "calc(33.333% - 11px)",
-                                                md: "340px",
-                                                lg: "360px",
-                                            },
-                                            px: "18px",
-                                            py: "16px",
-                                            borderRadius: "14px",
-                                            backgroundColor: "#F7F9FC",
-                                            border: "1px solid #E3E9F2",
-                                            textAlign: "center",
-                                        }}
-                                    >
-                                        <Box
-                                            sx={{
-                                                color: PRIMARY_BLUE,
-                                                fontSize: {
-                                                    xs: "24px",
-                                                    md: "30px",
-                                                },
-                                                fontWeight: 800,
-                                                lineHeight: 1.1,
-                                            }}
-                                        >
-                                            {item.value}
-                                        </Box>
-
-                                        <Box
-                                            sx={{
-                                                mt: "6px",
-                                                color: TEXT_MUTED,
-                                                fontSize: {
-                                                    xs: "12px",
-                                                    md: "13px",
-                                                },
-                                                fontWeight: 500,
-                                                lineHeight: 1.35,
-                                            }}
-                                        >
-                                            {item.label}
-                                        </Box>
-                                    </Box>
-                                ))}
-                            </Box>
-                        ))}
-                    </Stack>
                 </Stack>
             </Stack>
 

@@ -5,12 +5,14 @@ import HomeFocus from "@/components/features/home/HomeFocusV2"
 import KeywordCloud from "@/components/features/home/KeyWordCloud"
 import News from "@/components/features/home/News"
 import PublicationAlert from "@/components/features/home/PublicationAlert"
+import HomeStatistic from "@/components/features/home/HomeStatistic"
 
 export default function Home() {
     return (
         <Stack>
             <HomeIntroduction/>
             <DividerLine/>
+            <HomeStatistic showTitle={true}/>
             <HomeFocus/>
             <Grid container sx={{ marginTop: '24px' }}>
                 <Grid size={6}>
