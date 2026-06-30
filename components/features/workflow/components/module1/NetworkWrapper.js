@@ -207,6 +207,8 @@ const NetworkWrapper = () => {
                             type="primary"
                             icon={<QuestionCircleOutlined />}
                             disabled={isSubmitting}
+                            href='/tutorial'
+                            target='_blank'
                         >
                             Submission Help
                         </Button>

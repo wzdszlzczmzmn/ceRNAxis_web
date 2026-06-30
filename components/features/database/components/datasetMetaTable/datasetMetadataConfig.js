@@ -382,7 +382,7 @@ export const getDatasetMetadataColumns = (geneBioType) => {
             align: "center",
             render: (_, record) => {
                 const dataset = record?.dataset
-                const isSampleDataset = Number(record?.sample_nums) > 0
+                const isSampleDataset = record?.obs_type === 'sample'
                 const showAnnotation = geneBioType === "mRNA" && isSampleDataset
 
                 return (
