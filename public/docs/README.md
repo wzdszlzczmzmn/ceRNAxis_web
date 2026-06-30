@@ -8,6 +8,8 @@ ceRNAxisDB provides a comprehensive web-based database for browsing cancer-relat
 
 In addition to expression datasets, ceRNAxisDB provides a **ceRNA Axis Interaction Network Database**, which collects curated RNA-RNA interaction records from multiple public resources. These interactions include miRNA-mRNA, miRNA-lncRNA, and related ceRNA regulatory relationships, serving as the background catalogue for ceRNA axis construction and annotation.
 
+![ceRNAxisDB_database](img/ceRNAxisDB_database.png)
+
 ## Analysis Workflows
 
 ceRNAxisDB further provides three integrated analysis workflows, enabling users to move from simple querying to full ceRNA network construction:
