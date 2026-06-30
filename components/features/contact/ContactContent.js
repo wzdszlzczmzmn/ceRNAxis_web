@@ -128,7 +128,8 @@ const TeamIntroduction = () => {
                         </Stack>
                         <Stack direction="row" spacing={1} sx={{alignItems: 'center'}}>
                             <EnvironmentOutlined/>
-                            <Box component='span'><b>Address:</b> 1B-109, 1/F, Block 1, To Yuen Building, Tat Chee Avenue, Kowloon, Hong Kong, China</Box>
+                            <Box component='span'><b>Address:</b> Room 10-404, 10/F, Jockey Club One Health Tower, 83 Tat Chee Avenue, City
+                                University of Hong Kong, Kowloon Tong, Kowloon, Hong Kong</Box>
                         </Stack>
                     </Stack>
                 </Stack>
@@ -186,26 +187,29 @@ const Authors = () => {
                     </Grid>
                 </Grid>
                 <Grid container spacing={3.5} sx={{ fontSize: '20px' }}>
+                    {/*<Grid xs={6}>*/}
+                    {/*    <AuthorsCard name="Qiangguo Jin" email="qgking@nwpu.edu.cn" char="Z" colorIndex={12} />*/}
+                    {/*</Grid>*/}
                     <Grid xs={6}>
-                        <AuthorsCard name="Qiangguo Jin" email="qgking@nwpu.edu.cn" char="Z" colorIndex={12} />
+                        <AuthorsCard name="Anna Jiang" email="anna.jiang@my.cityu.edu.hk" char="Z" colorIndex={12} />
                     </Grid>
                     <Grid xs={6}>
                         <AuthorsCard name="Jieyi Zheng" email="zhengjieyi@mail.nwpu.edu.cn" char="Z" colorIndex={12} />
                     </Grid>
                 </Grid>
-                <Grid container spacing={3.5} sx={{ fontSize: '20px' }}>
-                    <Grid xs={6}>
-                        <AuthorsCard name="Sisi Peng" email="sisipeng@mail.nwpu.edu.cn" char="Z" colorIndex={12} />
-                    </Grid>
-                    <Grid xs={6}>
-                        <AuthorsCard name="Anna Jiang" email="anna.jiang@my.cityu.edu.hk" char="Z" colorIndex={12} />
-                    </Grid>
-                </Grid>
-                <Grid container spacing={3.5} sx={{ fontSize: '20px' }}>
-                    <Grid xs={6}>
-                        <AuthorsCard name="Chengshang Lyu" email="cs.lyu@my.cityu.edu.hk" char="Z" colorIndex={12} />
-                    </Grid>
-                </Grid>
+                {/*<Grid container spacing={3.5} sx={{ fontSize: '20px' }}>*/}
+                {/*    <Grid xs={6}>*/}
+                {/*        <AuthorsCard name="Sisi Peng" email="sisipeng@mail.nwpu.edu.cn" char="Z" colorIndex={12} />*/}
+                {/*    </Grid>*/}
+                {/*    <Grid xs={6}>*/}
+                {/*        <AuthorsCard name="Anna Jiang" email="anna.jiang@my.cityu.edu.hk" char="Z" colorIndex={12} />*/}
+                {/*    </Grid>*/}
+                {/*</Grid>*/}
+                {/*<Grid container spacing={3.5} sx={{ fontSize: '20px' }}>*/}
+                {/*    <Grid xs={6}>*/}
+                {/*        <AuthorsCard name="Chengshang Lyu" email="cs.lyu@my.cityu.edu.hk" char="Z" colorIndex={12} />*/}
+                {/*    </Grid>*/}
+                {/*</Grid>*/}
             </Stack>
         </Stack>
     )

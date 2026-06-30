@@ -17,23 +17,23 @@ const Tutorial = ({}) => {
     }, [])
 
     return (
-        // <Box sx={{ height: "100%" }}>
-        //     <iframe
-        //         ref={iframeRef}
-        //         src="/docs/index.html"
-        //         style={{width: '100%', minHeight: 'calc(100vh - 148px)', border: 'none' }}
-        //         title="Docsify Docs"
-        //         allow="fullscreen"
-        //     />
-        // </Box>
-        <Stack spacing={4} sx={{ marginTop: '24px' }}>
-            <Box
-                component='h6'
-                sx={{ fontSize: '40px' }}
-            >
-                Tutorial Page
-            </Box>
-        </Stack>
+        <Box sx={{ height: "100%" }}>
+            <iframe
+                ref={iframeRef}
+                src="/docs/index.html"
+                style={{width: '100%', minHeight: 'calc(100vh - 148px)', border: 'none' }}
+                title="Docsify Docs"
+                allow="fullscreen"
+            />
+        </Box>
+        // <Stack spacing={4} sx={{ marginTop: '24px' }}>
+        //     <Box
+        //         component='h6'
+        //         sx={{ fontSize: '40px' }}
+        //     >
+        //         Tutorial Page
+        //     </Box>
+        // </Stack>
     )
 }
 

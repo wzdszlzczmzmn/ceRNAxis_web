@@ -1,9 +1,6 @@
 - Overview
-    - [Introduction](/README.md)
+    - [Introduction](./README.md)
 - Database
-    - [Database introduction](./Database_introduction.md)
-    - [Database exploration](./Database_explore.md)
-    - [Database download](./Database_download.md)
+    - [Database Tutorial](./Database%20tutorial.md)
 - Workflow
-  - [Workflow Introduction](./Analysis_introduction.md)
-  - [Workflow Explore](./Analysis_explore.md)
+  - [Workflow Tutorial](./Workflow.md)

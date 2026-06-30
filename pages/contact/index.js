@@ -16,7 +16,7 @@ const Contact = ({}) => {
                     Contact Page
                 </Box>
             </Stack>
-            {/*<ContactContent/>*/}
+            <ContactContent/>
         </>
     )
 }
