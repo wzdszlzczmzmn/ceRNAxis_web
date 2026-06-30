@@ -5,9 +5,6 @@ import { Box, Stack } from "@mui/system"
 const Contact = ({}) => {
     return (
         <>
-            <Head>
-                <title>Contact | CNAScope</title>
-            </Head>
             <Stack spacing={4} sx={{ marginTop: '24px' }}>
                 <Box
                     component='h6'

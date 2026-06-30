@@ -12,7 +12,7 @@ export default function App({ Component, pageProps }) {
       <StyleProvider layer>
         <ConfigProvider theme={theme}>
           <Head>
-            <title>ceRNAxis</title>
+            <title>ceRNAxisDB</title>
             <meta name="description" content="ceRNAxis"/>
             <meta name="viewport" content="width=device-width, initial-scale=1"/>
             <link rel="icon" href="/ceRNAxisDB_logo2.svg"/>

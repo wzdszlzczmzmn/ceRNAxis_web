@@ -173,7 +173,7 @@ const DatasetAnnotationPage = () => {
     return (
         <>
             <Head>
-                <title>{dataset} Annotations | ceRNAxis</title>
+                <title>{dataset} Annotations | ceRNAxisDB</title>
                 <meta
                     name="description"
                     content={`Annotations of dataset ${dataset}`}

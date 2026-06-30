@@ -52,7 +52,7 @@ const DemoFiles = () => {
     return (
         <>
             <Head>
-                <title>Demo Files | ceRNA Axis</title>
+                <title>Demo Files | ceRNAxisDB</title>
             </Head>
 
             <Stack spacing={4} sx={{ marginTop: "24px" }}>

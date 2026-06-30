@@ -44,7 +44,7 @@ const DatasetDetailPage = ({}) => {
     return (
         <>
             <Head>
-                <title>{dataset} | ceRNAxis</title>
+                <title>{dataset} | ceRNAxisDB</title>
                 <meta
                     name="description"
                     content={`Details of dataset ${dataset}`}

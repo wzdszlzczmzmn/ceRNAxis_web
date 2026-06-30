@@ -6,7 +6,7 @@ const DatabasePage = ({}) => {
     return (
         <>
             <Head>
-                <title>Databases | ceRNAxis</title>
+                <title>Databases | ceRNAxisDB</title>
                 <meta name="description" content="ceRNAxis Database Table"/>
             </Head>
             <Stack spacing={4} sx={{ marginTop: '24px' }}>

@@ -44,7 +44,7 @@ const LogoSection = () => (
             priority
         />
         <Stack direction='row'>
-            <Box component='span' sx={{ color: '#011c5c', fontWeight: 'bold' }}>ceRNAxis</Box>
+            <Box component='span' sx={{ color: '#011c5c', fontWeight: 'bold' }}>ceRNAxisDB</Box>
         </Stack>
     </Box>
 )

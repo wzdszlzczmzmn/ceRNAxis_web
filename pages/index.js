@@ -34,9 +34,9 @@ export default function Home() {
                     </Box>
                 </Grid>
             </Grid>
-            <Box sx={{ marginTop: '24px', mx: '48px' }}>
-                <PublicationAlert/>
-            </Box>
+            {/*<Box sx={{ marginTop: '24px', mx: '48px' }}>*/}
+            {/*    <PublicationAlert/>*/}
+            {/*</Box>*/}
         </Stack>
     )
 }

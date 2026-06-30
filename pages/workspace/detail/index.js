@@ -78,7 +78,7 @@ const TaskDetail = () => {
     return (
         <>
             <Head>
-                <title>Workflow Result | ceRNA Axis</title>
+                <title>Workflow Result | ceRNAxisDB</title>
             </Head>
 
             {DetailComponent ? (
