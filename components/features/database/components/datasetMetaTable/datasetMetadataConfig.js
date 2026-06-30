@@ -1,8 +1,13 @@
 import BasicChip from "@/components/ui/chips/BasicChip"
 import EllipsisText from "@/components/common/text/EllipsisText"
 import { Stack } from "@mui/system"
-import { Button } from "antd"
-import { FileTextOutlined, ProfileOutlined } from "@ant-design/icons"
+import { Button, Dropdown } from "antd"
+import { DownloadOutlined, DownOutlined, FileTextOutlined, ProfileOutlined } from "@ant-design/icons"
+import {
+    getDatasetDownloadUrl,
+    getTCGAAnnotationDownloadUrl,
+    getTIMEDBAnnotationDownloadUrl
+} from "@/lib/api/database/datasetMetaTable"
 
 export const DATASET_GENE_BIO_TYPES = ["mRNA", "miRNA", "lncRNA", "circRNA"]
 
@@ -48,6 +53,191 @@ export const FILTER_LABEL_MAP = {
     obs_type: "Observation Type",
     reference: "Reference",
     cancer_type: "Cancer Type",
+}
+
+const TCGA_ANNOTATION_DATASETS = new Set([
+    "TCGA_ACC_mRNA",
+    "TCGA_BRCA_mRNA",
+    "TCGA_CHOL_mRNA",
+    "TCGA_ESCA_mRNA",
+    "TCGA_KICH_mRNA",
+    "TCGA_KIRP_mRNA",
+    "TCGA_LUAD_mRNA",
+    "TCGA_MESO_mRNA",
+    "TCGA_PRAD_mRNA",
+    "TCGA_SKCM_mRNA",
+    "TCGA_TGCT_mRNA",
+    "TCGA_UVM_mRNA",
+    "TCGA_BLCA_mRNA",
+    "TCGA_CESC_mRNA",
+    "TCGA_COAD_mRNA",
+    "TCGA_HNSC_mRNA",
+    "TCGA_KIRC_mRNA",
+    "TCGA_LIHC_mRNA",
+    "TCGA_LUSC_mRNA",
+    "TCGA_PAAD_mRNA",
+    "TCGA_READ_mRNA",
+    "TCGA_STAD_mRNA",
+    "TCGA_THCA_mRNA",
+])
+
+const TIMEDB_ANNOTATION_DATASETS = new Set([
+    "GSE101472_COAD",
+    "GSE135304_LUAD",
+    "GSE157010",
+    "GSE18670",
+    "GSE20189",
+    "GSE26571",
+    "GSE32894",
+    "GSE38932",
+    "GSE41271_LUAD",
+    "GSE42363",
+    "GSE47404",
+    "GSE62321",
+    "GSE68606_LUAD",
+    "GSE76124",
+    "GSE9638",
+    "GSE104922",
+    "GSE135304_LUSC",
+    "GSE157284",
+    "GSE19697",
+    "GSE20194",
+    "GSE29621",
+    "GSE33371_ACC",
+    "GSE38939",
+    "GSE41271_LUSC",
+    "GSE42404",
+    "GSE48408",
+    "GSE62932",
+    "GSE74553",
+    "GSE83836",
+    "GSE97177",
+    "GSE107591",
+    "GSE143985",
+    "GSE15852",
+    "GSE19750",
+    "GSE22050_ESCA",
+    "GSE31448",
+    "GSE37200",
+    "GSE39582",
+    "GSE41994",
+    "GSE43365",
+    "GSE49355",
+    "GSE63111",
+    "GSE75037",
+    "GSE8607",
+    "GSE98528",
+    "GSE10927_ACC",
+    "GSE146114_GPL10558",
+    "GSE17710",
+    "GSE19915",
+    "GSE22050_STAD",
+    "GSE31595",
+    "GSE37201",
+    "GSE40115",
+    "GSE42127_LUAD",
+    "GSE45168",
+    "GSE49481",
+    "GSE65074",
+    "GSE75316",
+    "GSE89563",
+    "GSE128959",
+    "GSE157009",
+    "GSE17907",
+    "GSE19949",
+    "GSE23822",
+    "GSE32548",
+    "GSE38832",
+    "GSE40911",
+    "GSE42127_LUSC",
+    "GSE45670",
+    "GSE50081",
+    "GSE66272_KIRC",
+    "GSE76019",
+    "GSE92921",
+])
+
+const getAnnotationDownloadType = (dataset) => {
+    if (TCGA_ANNOTATION_DATASETS.has(dataset)) {
+        return "tcga"
+    }
+
+    if (TIMEDB_ANNOTATION_DATASETS.has(dataset)) {
+        return "timedb"
+    }
+
+    return null
+}
+
+const getAnnotationDownloadUrl = (dataset, annotationType) => {
+    if (annotationType === "tcga") {
+        return getTCGAAnnotationDownloadUrl(dataset)
+    }
+
+    if (annotationType === "timedb") {
+        return getTIMEDBAnnotationDownloadUrl(dataset)
+    }
+
+    return null
+}
+
+const DatasetDownloadButton = ({ dataset }) => {
+    const annotationType = getAnnotationDownloadType(dataset)
+    const annotationDownloadUrl = getAnnotationDownloadUrl(
+        dataset,
+        annotationType,
+    )
+
+    if (!annotationDownloadUrl) {
+        return (
+            <Button
+                icon={<DownloadOutlined />}
+                href={getDatasetDownloadUrl(dataset)}
+                target="_blank"
+            >
+                Download
+            </Button>
+        )
+    }
+
+    const items = [
+        {
+            key: "expression",
+            label: (
+                <a
+                    href={getDatasetDownloadUrl(dataset)}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Expression Data
+                </a>
+            ),
+        },
+        {
+            key: "annotation",
+            label: (
+                <a
+                    href={annotationDownloadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Annotation Data
+                </a>
+            ),
+        },
+    ]
+
+    return (
+        <Dropdown
+            menu={{ items }}
+            trigger={["hover"]}
+            placement="bottomRight"
+        >
+            <Button icon={<DownloadOutlined />}>
+                Download
+            </Button>
+        </Dropdown>
+    )
 }
 
 const normalizeEmpty = (value, fallback = "NA") => {
@@ -192,6 +382,8 @@ export const getDatasetMetadataColumns = (geneBioType) => {
             align: "center",
             render: (_, record) => {
                 const dataset = record?.dataset
+                const isSampleDataset = Number(record?.sample_nums) > 0
+                const showAnnotation = geneBioType === "mRNA" && isSampleDataset
 
                 return (
                     <Stack direction="row" spacing={2} justifyContent="center">
@@ -203,7 +395,7 @@ export const getDatasetMetadataColumns = (geneBioType) => {
                             Detail
                         </Button>
 
-                        {geneBioType === "mRNA" && (
+                        {showAnnotation && (
                             <Button
                                 icon={<ProfileOutlined />}
                                 href={`/database/dataset/annotation?dataset=${encodeURIComponent(dataset)}`}
@@ -211,10 +403,12 @@ export const getDatasetMetadataColumns = (geneBioType) => {
                                 Annotation
                             </Button>
                         )}
+
+                        <DatasetDownloadButton dataset={dataset} />
                     </Stack>
                 )
             },
-        },
+        }
     ]
 
     return columns

@@ -5,12 +5,14 @@ import { useRouter } from "next/router"
 import CustomHeaderMenu from "@/components/ui/menu/CustomHeaderMenu"
 import {
     BarChartOutlined,
-    CloudDownloadOutlined, DeploymentUnitOutlined,
     FileTextOutlined,
     HomeOutlined, MailOutlined,
     ProfileOutlined
 } from "@ant-design/icons"
 import DatabaseIcon from "@/components/icons/Database"
+
+const PRIMARY_BLUE = "#062A73"
+const ACCENT_CORAL = "#D96A5F"
 
 const GlobalHeader = () => (
     <CustomHeader>
@@ -44,7 +46,15 @@ const LogoSection = () => (
             priority
         />
         <Stack direction='row'>
-            <Box component='span' sx={{ color: '#011c5c', fontWeight: 'bold' }}>ceRNAxisDB</Box>
+            <Box component="span" sx={{ color: PRIMARY_BLUE, fontWeight: "bold" }}>
+                ceRNA
+            </Box>
+            <Box component="span" sx={{ color: ACCENT_CORAL, fontWeight: "bold" }}>
+                xis
+            </Box>
+            <Box component="span" sx={{ color: PRIMARY_BLUE, fontWeight: "bold" }}>
+                DB
+            </Box>
         </Stack>
     </Box>
 )

@@ -13,16 +13,22 @@ const TEXT_DARK = "#202124"
 const TEXT_MUTED = "#6B7583"
 const BUTTON_LIGHT_BG = "#F5F8FC"
 
-const stats = [
-    { value: "[N]", label: "miRNA–mRNA interactions" },
-    { value: "[N]", label: "miRNA–lncRNA interactions" },
-    { value: "[N]", label: "miRNA–circRNA interactions" },
-    { value: "[N]", label: "ceRNA axes" },
-    { value: "[N]", label: "cancer types" },
-    { value: "[N]", label: "cohorts" },
-    { value: "[N]", label: "bulk samples" },
-    { value: "[N]", label: "single cells" },
-    { value: "[N]", label: "spatial spots" },
+const statRows = [
+    [
+        { value: "[N]", label: "miRNA–mRNA interactions" },
+        { value: "[N]", label: "miRNA–lncRNA interactions" },
+        { value: "[N]", label: "miRNA–circRNA interactions" },
+    ],
+    [
+        { value: "[N]", label: "cohorts" },
+        { value: "[N]", label: "cancer types" },
+        { value: "[N]", label: "cohort-specific ceRNA axes" },
+    ],
+    [
+        { value: "[N]", label: "bulk samples" },
+        { value: "[N]", label: "single cells" },
+        { value: "[N]", label: "spatial spots" },
+    ],
 ]
 
 const HomeIntroduction = ({}) => (
@@ -130,73 +136,92 @@ const HomeIntroduction = ({}) => (
                     >
                         ceRNAxisDB is a next-generation cancer ceRNA resource that integrates pan-cancer bulk RNA data,
                         single-cell transcriptomics, and spatial transcriptomics to identify clinically stratified ceRNA
-                        axes across human cancers. It is built on a high-confidence ceRNA background network curated from
-                        TargetScan 8.0, miRTarBase 9.0, miRDB 6.0, NPInter 4.0, ENCORI/starBase, miRWalk v3, RNAInter,
-                        and circNet 2.0, enabling context-aware discovery and prioritization of actionable ceRNA regulatory
-                        hypotheses.
+                        axes across human cancers. Built from curated bulk cohorts including TCGA, TARGET, GEO, and
+                        other public cancer datasets, single-cell data from TISCH2, and spatial transcriptomic resources
+                        from 10x Genomics and scTML, ceRNAxisDB provides cohort-specific axes spanning cancer
+                        types and cohorts, derived from bulk samples, single cells, and spatial spots.
+                        Each axis is linked to layered translational annotations for survival, tumour microenvironment,
+                        immune-checkpoint blockade, pathway activity, reproducibility, perturbation response, drug
+                        repurposing, and sponge evidence, enabling context-aware discovery and prioritization of
+                        actionable ceRNA regulatory hypotheses.
                     </Box>
 
-                    <Box
+                    <Stack
+                        spacing={{
+                            xs: 1.5,
+                            md: 2,
+                        }}
+                        alignItems="center"
                         sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                            gap: {
-                                xs: "12px",
-                                md: "16px",
-                            },
                             width: "100%",
-                            maxWidth: 1180,
+                            maxWidth: 1200,
                         }}
                     >
-                        {stats.map((item) => (
+                        {statRows.map((row, rowIndex) => (
                             <Box
-                                key={item.label}
+                                key={rowIndex}
                                 sx={{
-                                    width: {
-                                        xs: "calc(50% - 6px)",
-                                        sm: "calc(33.333% - 11px)",
-                                        md: "214px",
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    justifyContent: "center",
+                                    gap: {
+                                        xs: "12px",
+                                        md: "16px",
                                     },
-                                    px: "18px",
-                                    py: "16px",
-                                    borderRadius: "14px",
-                                    backgroundColor: "#F7F9FC",
-                                    border: "1px solid #E3E9F2",
-                                    textAlign: "center",
+                                    width: "100%",
                                 }}
                             >
-                                <Box
-                                    sx={{
-                                        color: PRIMARY_BLUE,
-                                        fontSize: {
-                                            xs: "24px",
-                                            md: "30px",
-                                        },
-                                        fontWeight: 800,
-                                        lineHeight: 1.1,
-                                    }}
-                                >
-                                    {item.value}
-                                </Box>
+                                {row.map((item) => (
+                                    <Box
+                                        key={item.label}
+                                        sx={{
+                                            width: {
+                                                xs: "calc(50% - 6px)",
+                                                sm: "calc(33.333% - 11px)",
+                                                md: "340px",
+                                                lg: "360px",
+                                            },
+                                            px: "18px",
+                                            py: "16px",
+                                            borderRadius: "14px",
+                                            backgroundColor: "#F7F9FC",
+                                            border: "1px solid #E3E9F2",
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                color: PRIMARY_BLUE,
+                                                fontSize: {
+                                                    xs: "24px",
+                                                    md: "30px",
+                                                },
+                                                fontWeight: 800,
+                                                lineHeight: 1.1,
+                                            }}
+                                        >
+                                            {item.value}
+                                        </Box>
 
-                                <Box
-                                    sx={{
-                                        mt: "6px",
-                                        color: TEXT_MUTED,
-                                        fontSize: {
-                                            xs: "12px",
-                                            md: "13px",
-                                        },
-                                        fontWeight: 500,
-                                        lineHeight: 1.35,
-                                    }}
-                                >
-                                    {item.label}
-                                </Box>
+                                        <Box
+                                            sx={{
+                                                mt: "6px",
+                                                color: TEXT_MUTED,
+                                                fontSize: {
+                                                    xs: "12px",
+                                                    md: "13px",
+                                                },
+                                                fontWeight: 500,
+                                                lineHeight: 1.35,
+                                            }}
+                                        >
+                                            {item.label}
+                                        </Box>
+                                    </Box>
+                                ))}
                             </Box>
                         ))}
-                    </Box>
+                    </Stack>
                 </Stack>
             </Stack>
 
