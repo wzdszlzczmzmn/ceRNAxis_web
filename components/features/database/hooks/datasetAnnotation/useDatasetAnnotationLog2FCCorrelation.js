@@ -1,7 +1,8 @@
 import useSWR from "swr";
 
 import { fetcher } from "@/lib/api/fetcher";
-import { getDatasetAnnotationLog2FCCorrelationURL } from "@/lib/api/database/datasetAnnotation"
+import { getDatasetAnnotationLog2FCCorrelationURL }
+    from "@/lib/api/database/datasetAnnotation";
 
 const EMPTY_SUMMARY = {
     raw_count: 0,
@@ -15,11 +16,16 @@ export const useDatasetAnnotationLog2FCCorrelation = ({
     source,
     datasetName,
     interactionType,
+    groupBy = null,
+    groupType = null,
 }) => {
+    const isTIMEDB = source === "TIMEDB";
+
     const shouldFetch = Boolean(
-        source &&
-        datasetName &&
-        interactionType
+        source
+        && datasetName
+        && interactionType
+        && (!isTIMEDB || (groupBy && groupType))
     );
 
     const url = shouldFetch
@@ -27,6 +33,8 @@ export const useDatasetAnnotationLog2FCCorrelation = ({
             source,
             datasetName,
             interactionType,
+            groupBy,
+            groupType,
         })
         : null;
 
@@ -42,6 +50,10 @@ export const useDatasetAnnotationLog2FCCorrelation = ({
 
         source: data?.source ?? source ?? null,
         datasetName: data?.dataset_name ?? datasetName ?? null,
+
+        groupBy: data?.group_by ?? groupBy ?? null,
+        groupType: data?.group_type ?? groupType ?? null,
+
         annotationDirName: data?.annotation_dir_name ?? null,
         annotationFilePrefix: data?.annotation_file_prefix ?? null,
         networkSourceTaskType: data?.network_source_task_type ?? null,
@@ -59,6 +71,8 @@ export const useDatasetAnnotationLog2FCCorrelation = ({
         meta: {
             source: data?.source,
             networkSourceTaskType: data?.network_source_task_type,
+            groupBy: data?.group_by ?? groupBy ?? null,
+            groupType: data?.group_type ?? groupType ?? null,
         },
 
         isLoading,

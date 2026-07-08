@@ -6,6 +6,8 @@ import NetworkResultCard from "@/components/features/common/NetworkResult/Networ
 
 const TIMEDBAnnotationNetworkResultWrapper = ({
     dataset,
+    groupBy,
+    groupType,
 }) => {
     const {
         networkData,
@@ -15,7 +17,11 @@ const TIMEDBAnnotationNetworkResultWrapper = ({
     } = useDatasetAnnotationNetworkResult({
         source: "TIMEDB",
         datasetName: dataset,
+        groupBy,
+        groupType,
     });
+
+    const isAvailable = Boolean(dataset && groupBy && groupType);
 
     return (
         <NetworkResultCard
@@ -24,9 +30,15 @@ const TIMEDBAnnotationNetworkResultWrapper = ({
             isLoading={isNetworkLoading}
             isError={isNetworkError}
             onRefresh={mutateNetwork}
-            missingDescription={!dataset ? "Missing dataset." : null}
-            isAvailable={Boolean(dataset)}
-            unavailableDescription="Annotation network requires a valid dataset."
+            missingDescription={
+                !dataset
+                    ? "Missing dataset."
+                    : !groupBy || !groupType
+                        ? "Missing annotation group type."
+                        : null
+            }
+            isAvailable={isAvailable}
+            unavailableDescription="Annotation network requires a valid dataset and annotation group type."
             emptyDescription="No TIMEDB annotation network data found."
         />
     );

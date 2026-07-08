@@ -8,9 +8,13 @@ import { useDatasetAnnotationCMapResult }
 const DatasetAnnotationCMapResultSection = ({
     source,
     dataset,
+    groupBy = null,
+    groupType = null,
     title = "CMap Results",
     emptyDescription = "No CMap result",
 }) => {
+    const isTIMEDB = source === "TIMEDB";
+
     const {
         columns,
         count,
@@ -20,7 +24,21 @@ const DatasetAnnotationCMapResultSection = ({
     } = useDatasetAnnotationCMapResult({
         source,
         datasetName: dataset,
+        groupBy,
+        groupType,
     });
+
+    const missingDescription = !dataset
+        ? "Missing dataset"
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "Missing annotation group type."
+            : null;
+
+    const unavailableDescription = dataset && !source
+        ? "Missing annotation source."
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "TIMEDB annotation CMap result requires a valid group type."
+            : null;
 
     return (
         <CMapResultCard
@@ -30,12 +48,8 @@ const DatasetAnnotationCMapResultSection = ({
             results={results}
             isLoading={isLoading}
             isError={isError}
-            missingDescription={!dataset ? "Missing dataset" : null}
-            unavailableDescription={
-                dataset && !source
-                    ? "Missing annotation source."
-                    : null
-            }
+            missingDescription={missingDescription}
+            unavailableDescription={unavailableDescription}
             emptyDescription={emptyDescription}
         />
     );

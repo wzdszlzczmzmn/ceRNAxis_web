@@ -7,13 +7,23 @@ import { getDatasetAnnotationNetworkURL }
 export const useDatasetAnnotationNetworkResult = ({
     source,
     datasetName,
+    groupBy = null,
+    groupType = null,
 }) => {
-    const shouldFetch = Boolean(source && datasetName);
+    const isTIMEDB = source === "TIMEDB";
+
+    const shouldFetch = Boolean(
+        source
+        && datasetName
+        && (!isTIMEDB || (groupBy && groupType))
+    );
 
     const url = shouldFetch
         ? getDatasetAnnotationNetworkURL({
             source,
             datasetName,
+            groupBy,
+            groupType,
         })
         : null;
 

@@ -32,13 +32,18 @@ export const useDatasetAnnotationExpCorrelationPlotData = ({
     gene1,
     gene2,
     type,
+    groupBy = null,
+    groupType = null,
 }) => {
+    const isTIMEDB = source === "TIMEDB";
+
     const shouldFetch = Boolean(
-        source &&
-        datasetName &&
-        gene1 &&
-        gene2 &&
-        type
+        source
+        && datasetName
+        && gene1
+        && gene2
+        && type
+        && (!isTIMEDB || (groupBy && groupType))
     );
 
     const url = shouldFetch
@@ -48,6 +53,8 @@ export const useDatasetAnnotationExpCorrelationPlotData = ({
             gene1,
             gene2,
             type,
+            groupBy,
+            groupType,
         })
         : null;
 
@@ -63,6 +70,10 @@ export const useDatasetAnnotationExpCorrelationPlotData = ({
 
         source: data?.source ?? source ?? null,
         datasetName: data?.dataset_name ?? datasetName ?? null,
+
+        groupBy: data?.group_by ?? groupBy ?? null,
+        groupType: data?.group_type ?? groupType ?? null,
+
         annotationDirName: data?.annotation_dir_name ?? null,
         annotationFilePrefix: data?.annotation_file_prefix ?? null,
         networkSourceTaskType: data?.network_source_task_type ?? null,
@@ -94,6 +105,8 @@ export const useDatasetAnnotationExpCorrelationPlotData = ({
             tcgaType: data?.tcga_type,
             gene1ExpressionFile: data?.gene1_expression_file,
             gene2ExpressionFile: data?.gene2_expression_file,
+            groupBy: data?.group_by ?? groupBy ?? null,
+            groupType: data?.group_type ?? groupType ?? null,
         },
 
         isLoading,

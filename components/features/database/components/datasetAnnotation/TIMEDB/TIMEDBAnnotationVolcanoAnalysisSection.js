@@ -5,6 +5,8 @@ import DatasetAnnotationVolcanoAnalysisSection
 
 const TIMEDBAnnotationVolcanoAnalysisSection = ({
     dataset,
+    groupBy,
+    groupType,
     annotationAvailability,
     height = 620,
 }) => {
@@ -12,6 +14,8 @@ const TIMEDBAnnotationVolcanoAnalysisSection = ({
         <DatasetAnnotationVolcanoAnalysisSection
             source="TIMEDB"
             dataset={dataset}
+            groupBy={groupBy}
+            groupType={groupType}
             annotationAvailability={annotationAvailability}
             title="Expression Volcano Plot"
             height={height}

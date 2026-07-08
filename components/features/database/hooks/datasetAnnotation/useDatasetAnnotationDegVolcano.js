@@ -76,13 +76,18 @@ export const useDatasetAnnotationDegVolcano = ({
     degScope = "all",
     degMethod = "limma",
     usePadj = true,
+    groupBy = null,
+    groupType = null,
 }) => {
+    const isTIMEDB = source === "TIMEDB";
+
     const shouldFetch = Boolean(
         source &&
         datasetName &&
         rnaType &&
         degScope &&
-        degMethod
+        degMethod &&
+        (!isTIMEDB || (groupBy && groupType))
     );
 
     const url = shouldFetch
@@ -93,6 +98,8 @@ export const useDatasetAnnotationDegVolcano = ({
             degScope,
             degMethod,
             usePadj,
+            groupBy,
+            groupType,
         })
         : null;
 
@@ -110,6 +117,10 @@ export const useDatasetAnnotationDegVolcano = ({
 
         source: volcanoData?.source ?? source ?? null,
         datasetName: volcanoData?.dataset_name ?? datasetName ?? null,
+
+        groupBy: volcanoData?.group_by ?? groupBy ?? null,
+        groupType: volcanoData?.group_type ?? groupType ?? null,
+
         annotationDirName: volcanoData?.annotation_dir_name ?? null,
         annotationFilePrefix: volcanoData?.annotation_file_prefix ?? null,
         networkSourceTaskType: volcanoData?.network_source_task_type ?? null,
@@ -137,6 +148,8 @@ export const useDatasetAnnotationDegVolcano = ({
             networkSourceTaskType: volcanoData?.network_source_task_type,
             degMethod: volcanoData?.deg_method,
             usePadj: volcanoData?.use_padj,
+            groupBy: volcanoData?.group_by ?? groupBy ?? null,
+            groupType: volcanoData?.group_type ?? groupType ?? null,
         },
 
         isLoading,

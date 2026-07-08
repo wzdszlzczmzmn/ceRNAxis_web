@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import ExpCorrelationAnalysisView
     from "@/components/features/common/ExpCorrelation/ExpCorrelationAnalysisView";
@@ -17,14 +17,26 @@ const EMPTY_DESCRIPTION_BY_SOURCE = {
 const DatasetAnnotationExpCorrelationSection = ({
     source,
     dataset,
+    groupBy = null,
+    groupType = null,
     title = "Expression Correlation Plot",
     height = 620,
 }) => {
+    const isTIMEDB = source === "TIMEDB";
+
     const [queryConfig, setQueryConfig] = useState({
         type: null,
         gene1: null,
         gene2: null,
     });
+
+    useEffect(() => {
+        setQueryConfig({
+            type: null,
+            gene1: null,
+            gene2: null,
+        });
+    }, [dataset, groupBy, groupType]);
 
     const {
         optionsData,
@@ -36,6 +48,8 @@ const DatasetAnnotationExpCorrelationSection = ({
     } = useDatasetAnnotationExpCorrelationOptions({
         source,
         datasetName: dataset,
+        groupBy,
+        groupType,
     });
 
     const {
@@ -50,7 +64,21 @@ const DatasetAnnotationExpCorrelationSection = ({
         type: queryConfig.type,
         gene1: queryConfig.gene1,
         gene2: queryConfig.gene2,
+        groupBy,
+        groupType,
     });
+
+    const missingDescription = !dataset
+        ? "Missing dataset"
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "Missing annotation group type."
+            : null;
+
+    const unavailableDescription = dataset && !source
+        ? "Missing annotation source."
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "TIMEDB expression correlation plot requires a valid group type."
+            : null;
 
     return (
         <ExpCorrelationAnalysisView
@@ -69,12 +97,8 @@ const DatasetAnnotationExpCorrelationSection = ({
             isPlotError={isPlotError}
             queryConfig={queryConfig}
             setQueryConfig={setQueryConfig}
-            missingDescription={!dataset ? "Missing dataset" : null}
-            unavailableDescription={
-                dataset && !source
-                    ? "Missing annotation source."
-                    : null
-            }
+            missingDescription={missingDescription}
+            unavailableDescription={unavailableDescription}
             emptyDescription={
                 EMPTY_DESCRIPTION_BY_SOURCE[source] ??
                 "No expression correlation data"

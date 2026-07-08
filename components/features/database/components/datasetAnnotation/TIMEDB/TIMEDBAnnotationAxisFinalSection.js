@@ -5,11 +5,15 @@ import DatasetAnnotationAxisFinalSection
 
 const TIMEDBAnnotationAxisFinalSection = ({
     dataset,
+    groupBy,
+    groupType,
 }) => {
     return (
         <DatasetAnnotationAxisFinalSection
             source="TIMEDB"
             dataset={dataset}
+            groupBy={groupBy}
+            groupType={groupType}
             title="ceRNA Axis Final Results"
             emptyDescription="No TIMEDB annotation axis final result"
         />

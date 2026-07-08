@@ -24,10 +24,14 @@ const DEFAULT_BACKGROUND_TYPES_BY_SOURCE = {
 const DatasetAnnotationLog2FCCorrelationSection = ({
     source,
     dataset,
+    groupBy = null,
+    groupType = null,
     annotationAvailability,
     title = "Log2FC Correlation Plot",
     height = 620,
 }) => {
+    const isTIMEDB = source === "TIMEDB";
+
     const availableBackgroundTypes = useMemo(() => {
         const values = annotationAvailability?.available_background_types;
 
@@ -55,7 +59,21 @@ const DatasetAnnotationLog2FCCorrelationSection = ({
         source,
         datasetName: dataset,
         interactionType: queryConfig.interactionType,
+        groupBy,
+        groupType,
     });
+
+    const missingDescription = !dataset
+        ? "Missing dataset"
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "Missing annotation group type."
+            : null;
+
+    const unavailableDescription = dataset && !source
+        ? "Missing annotation source."
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "TIMEDB Log2FC correlation plot requires a valid group type."
+            : null;
 
     return (
         <Log2FCCorrelationAnalysisView
@@ -69,12 +87,8 @@ const DatasetAnnotationLog2FCCorrelationSection = ({
             availableTypes={availableBackgroundTypes}
             isLoading={isLoading}
             isError={isError}
-            missingDescription={!dataset ? "Missing dataset" : null}
-            unavailableDescription={
-                dataset && !source
-                    ? "Missing annotation source."
-                    : null
-            }
+            missingDescription={missingDescription}
+            unavailableDescription={unavailableDescription}
         />
     );
 };

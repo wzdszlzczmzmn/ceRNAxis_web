@@ -13,9 +13,13 @@ const EMPTY_DESCRIPTION_BY_SOURCE = {
 const DatasetAnnotationDEGPathwaySection = ({
     source,
     dataset,
+    groupBy = null,
+    groupType = null,
     title = "DEG Pathway Enrichment Plot",
     height = 680,
 }) => {
+    const isTIMEDB = source === "TIMEDB";
+
     const {
         pathwayData,
         title: pathwayTitle,
@@ -25,7 +29,21 @@ const DatasetAnnotationDEGPathwaySection = ({
     } = useDatasetAnnotationDEGPathway({
         source,
         datasetName: dataset,
+        groupBy,
+        groupType,
     });
+
+    const missingDescription = !dataset
+        ? "Missing dataset"
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "Missing annotation group type."
+            : null;
+
+    const unavailableDescription = dataset && !source
+        ? "Missing annotation source."
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "TIMEDB DEG pathway enrichment requires a valid group type."
+            : null;
 
     return (
         <DEGPathwayAnalysisView
@@ -36,12 +54,8 @@ const DatasetAnnotationDEGPathwaySection = ({
             summary={summary}
             isLoading={isLoading}
             isError={isError}
-            missingDescription={!dataset ? "Missing dataset" : null}
-            unavailableDescription={
-                dataset && !source
-                        ? "Missing annotation source."
-                        : null
-            }
+            missingDescription={missingDescription}
+            unavailableDescription={unavailableDescription}
             emptyDescription={
                 EMPTY_DESCRIPTION_BY_SOURCE[source] ??
                 "No DEG pathway enrichment data"

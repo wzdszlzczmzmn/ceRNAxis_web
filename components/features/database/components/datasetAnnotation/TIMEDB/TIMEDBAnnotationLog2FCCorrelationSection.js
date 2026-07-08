@@ -5,6 +5,8 @@ import DatasetAnnotationLog2FCCorrelationSection
 
 const TIMEDBAnnotationLog2FCCorrelationSection = ({
     dataset,
+    groupBy,
+    groupType,
     annotationAvailability,
     height = 620,
 }) => {
@@ -12,6 +14,8 @@ const TIMEDBAnnotationLog2FCCorrelationSection = ({
         <DatasetAnnotationLog2FCCorrelationSection
             source="TIMEDB"
             dataset={dataset}
+            groupBy={groupBy}
+            groupType={groupType}
             annotationAvailability={annotationAvailability}
             title="Log2FC Correlation Plot"
             height={height}

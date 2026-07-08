@@ -13,9 +13,13 @@ const EMPTY_DESCRIPTION_BY_SOURCE = {
 const DatasetAnnotationSurvivalKMSection = ({
     source,
     dataset,
+    groupBy = null,
+    groupType = null,
     title = "Survival Analysis",
     height = 620,
 }) => {
+    const isTIMEDB = source === "TIMEDB";
+
     const {
         survivalData,
         titlePrimary,
@@ -26,7 +30,21 @@ const DatasetAnnotationSurvivalKMSection = ({
     } = useDatasetAnnotationSurvivalKM({
         source,
         datasetName: dataset,
+        groupBy,
+        groupType,
     });
+
+    const missingDescription = !dataset
+        ? "Missing dataset"
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "Missing annotation group type."
+            : null;
+
+    const unavailableDescription = dataset && !source
+        ? "Missing annotation source."
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "TIMEDB survival analysis requires a valid group type."
+            : null;
 
     return (
         <SurvivalKMAnalysisView
@@ -38,12 +56,8 @@ const DatasetAnnotationSurvivalKMSection = ({
             summary={summary}
             isLoading={isLoading}
             isError={isError}
-            missingDescription={!dataset ? "Missing dataset" : null}
-            unavailableDescription={
-                dataset && !source
-                    ? "Missing annotation source."
-                    : null
-            }
+            missingDescription={missingDescription}
+            unavailableDescription={unavailableDescription}
             emptyDescription={
                 EMPTY_DESCRIPTION_BY_SOURCE[source] ??
                 "No survival analysis data"

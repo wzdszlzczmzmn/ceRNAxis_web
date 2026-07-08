@@ -22,11 +22,15 @@ const DEFAULT_AVAILABLE_DEG_SCOPES_BY_SOURCE = {
 const DatasetAnnotationVolcanoAnalysisSection = ({
     source,
     dataset,
+    groupBy = null,
+    groupType = null,
     annotationAvailability,
     title = "Expression Volcano Plot",
     height = 620,
     showDegScopeSelect = null,
 }) => {
+    const isTIMEDB = source === "TIMEDB";
+
     const availableDegRnaTypes = useMemo(() => {
         const values = annotationAvailability?.available_deg_rna_types;
 
@@ -72,7 +76,21 @@ const DatasetAnnotationVolcanoAnalysisSection = ({
         degScope: queryConfig.degScope,
         degMethod,
         usePadj,
+        groupBy,
+        groupType,
     });
+
+    const missingDescription = !dataset
+        ? "Missing dataset"
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "Missing annotation group type."
+            : null;
+
+    const unavailableDescription = dataset && !source
+        ? "Missing annotation source."
+        : isTIMEDB && (!groupBy || !groupType)
+            ? "TIMEDB volcano plot requires a valid group type."
+            : null;
 
     return (
         <VolcanoAnalysisView
@@ -90,12 +108,8 @@ const DatasetAnnotationVolcanoAnalysisSection = ({
             cutoffsByRnaType={cutoffs}
             usePadj={usePadj}
             showDegScopeSelect={showDegScopeSelect}
-            missingDescription={!dataset ? "Missing dataset" : null}
-            unavailableDescription={
-                dataset && !source
-                    ? "Missing annotation source."
-                    : null
-            }
+            missingDescription={missingDescription}
+            unavailableDescription={unavailableDescription}
         />
     );
 };
