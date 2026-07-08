@@ -33,6 +33,9 @@ export const useWorkflowAxisFinal = ({
         columns: data?.columns ?? [],
         results: data?.results ?? [],
 
+        axisProjectMatchEnabled: data?.axis_project_match_enabled ?? false,
+        axisProjectMatchSummary: data?.axis_project_match_summary ?? null,
+
         meta: {
             mapInfo: data?.map_info,
             degMethod: data?.deg_method,

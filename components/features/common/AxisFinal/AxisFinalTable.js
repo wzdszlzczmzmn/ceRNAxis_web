@@ -91,10 +91,107 @@ const renderGeneChip = (value, color) => (
     />
 );
 
+const MAX_PROJECT_CHIPS = 3;
+
+const isNoneGroupType = (value) => {
+    return String(value ?? "").trim().toLowerCase() === "none";
+};
+
+const getProjectMatchChipColor = (match) => {
+    const source = String(match?.source ?? "").toUpperCase();
+
+    if (source === "TCGA") {
+        return "blue";
+    }
+
+    if (source === "TIMEDB") {
+        return "purple";
+    }
+
+    return "default";
+};
+
+const getProjectMatchLabel = (match) => {
+    if (!match) {
+        return "-";
+    }
+
+    const datasetName = renderEmpty(match.dataset_name);
+    const groupType = String(match.group_type ?? "").trim();
+    const groupBy = String(match.group_by ?? "").trim();
+
+    if (!groupType || isNoneGroupType(groupType)) {
+        return datasetName;
+    }
+
+    if (groupBy) {
+        return `${datasetName} · ${groupBy}`;
+    }
+
+    return `${datasetName} · ${groupType}`;
+};
+
+const renderProjectMatchChips = (_, record) => {
+    const matches = Array.isArray(record?.dataset_project_matches)
+        ? record.dataset_project_matches
+        : [];
+
+    const matchCount = Number(record?.dataset_project_match_count ?? matches.length);
+
+    if (!matchCount || matches.length === 0) {
+        return (
+            <BasicChip
+                value="No match"
+                color="default"
+            />
+        );
+    }
+
+    const visibleMatches = matches.slice(0, MAX_PROJECT_CHIPS);
+    const remainingCount = Math.max(matchCount - visibleMatches.length, 0);
+
+    return (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                flexWrap: "wrap",
+            }}
+        >
+            {visibleMatches.map((match, index) => (
+                <BasicChip
+                    key={[
+                        match.project_id,
+                        match.occurrence_id,
+                        match.source,
+                        match.module,
+                        match.dataset_name,
+                        match.group_type,
+                        match.group_by,
+                        index,
+                    ].join("-")}
+                    value={getProjectMatchLabel(match)}
+                    color={getProjectMatchChipColor(match)}
+                />
+            ))}
+
+            {remainingCount > 0 && (
+                <BasicChip
+                    value={`+${remainingCount} projects`}
+                    color="gold"
+                />
+            )}
+        </div>
+    );
+};
+
 const AxisFinalTable = ({
     rows = [],
     columns: visibleColumnKeys = [],
     loading = false,
+    showProjectMatches = false,
 }) => {
     const visibleColumnKeySet = useMemo(() => {
         if (!Array.isArray(visibleColumnKeys) || visibleColumnKeys.length === 0) {
@@ -289,13 +386,32 @@ const AxisFinalTable = ({
             },
         ];
 
-        if (!visibleColumnKeySet) {
-            return allColumns;
+        const dataColumns = visibleColumnKeySet
+            ? allColumns.filter(column =>
+                visibleColumnKeySet.has(column.dataIndex)
+            )
+            : allColumns;
+
+        if (!showProjectMatches) {
+            return dataColumns;
         }
 
-        return allColumns.filter(column =>
-            visibleColumnKeySet.has(column.dataIndex)
-        );
+        return [
+            ...dataColumns,
+            {
+                title: "Matched Projects",
+                dataIndex: "dataset_project_matches",
+                key: "dataset_project_matches",
+                width: 320,
+                align: "center",
+                fixed: "right",
+                sorter: (a, b) => {
+                    return Number(a?.dataset_project_match_count ?? 0) -
+                        Number(b?.dataset_project_match_count ?? 0);
+                },
+                render: renderProjectMatchChips,
+            },
+        ];
     }, [
         visibleColumnKeySet,
         axisTypeFilters,
@@ -304,6 +420,7 @@ const AxisFinalTable = ({
         miRNARegulationFilters,
         lncRNARegulationFilters,
         circRNARegulationFilters,
+        showProjectMatches,
     ]);
 
     if (!loading && rows.length === 0) {

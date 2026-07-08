@@ -19,6 +19,7 @@ const AxisFinalResultCard = ({
     missingDescription = null,
     unavailableDescription = null,
     emptyDescription = "No ceRNA axis final result",
+    showProjectMatches = false,
 }) => {
     const recordCount = count ?? results.length;
 
@@ -79,6 +80,7 @@ const AxisFinalResultCard = ({
                     rows={results}
                     columns={columns}
                     loading={isLoading}
+                    showProjectMatches={showProjectMatches}
                 />
             )}
         </Card>

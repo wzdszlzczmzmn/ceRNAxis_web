@@ -45,6 +45,7 @@ const WorkflowAxisFinalSection = ({
                     : null
             }
             emptyDescription="No ceRNA axis final result"
+            showProjectMatches
         />
     );
 };
