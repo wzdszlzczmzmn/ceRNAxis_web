@@ -9,6 +9,7 @@ import {
     Flex,
     Input,
     Modal,
+    Radio,
     Row,
     Select,
     Space,
@@ -25,13 +26,49 @@ import EmptyView from "@/components/common/status/EmptyView";
 const { TextArea } = Input;
 const { Text, Link: AntLink } = Typography;
 
-const MAX_TOTAL_RNA_COUNT = 120;
+const MAX_TOTAL_RNA_COUNT = 150;
 
-const RNA_TYPES = [
-    { key: "miRNA", label: "miRNA", color: "volcano" },
-    { key: "mRNA", label: "mRNA", color: "blue" },
-    { key: "lncRNA", label: "lncRNA", color: "green" },
-    { key: "circRNA", label: "circRNA", color: "purple" },
+const COMMON_RNA_TYPES = [
+    {
+        key: "miRNA",
+        payloadKey: "miRNA",
+        label: "miRNA",
+        color: "volcano",
+    },
+    {
+        key: "lncRNA",
+        payloadKey: "lncRNA",
+        label: "lncRNA",
+        color: "green",
+    },
+    {
+        key: "circRNA",
+        payloadKey: "circRNA",
+        label: "circRNA",
+        color: "purple",
+    },
+];
+
+const NON_DIRECTIONAL_MRNA_TYPE = {
+    key: "mRNA",
+    payloadKey: "mRNA",
+    label: "mRNA",
+    color: "blue",
+};
+
+const DIRECTIONAL_MRNA_TYPES = [
+    {
+        key: "mRNAUp",
+        payloadKey: "mRNA_up",
+        label: "mRNA Up",
+        color: "volcano",
+    },
+    {
+        key: "mRNADown",
+        payloadKey: "mRNA_down",
+        label: "mRNA Down",
+        color: "blue",
+    },
 ];
 
 const TASK_NAME_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -80,19 +117,28 @@ const parseRnaInput = (text) => {
     );
 };
 
-const validateInput = (inputValue) => {
-    for (const item of RNA_TYPES) {
-        const value = inputValue[item.key];
+const validateInput = ({
+    inputValue,
+    activeRNATypes,
+}) => {
+    for (const item of activeRNATypes) {
+        const value = String(
+            inputValue[item.key] ?? ""
+        );
 
         if (INVALID_SEPARATOR_PATTERN.test(value)) {
             return {
                 valid: false,
-                message: `${item.label} contains invalid separators. Only English commas "," are allowed.`,
+                message:
+                    `${item.label} contains invalid separators. ` +
+                    'Only English commas "," are allowed.',
             };
         }
     }
 
-    return { valid: true };
+    return {
+        valid: true,
+    };
 };
 
 const buildCancerTypeOptions = (immuneMapOptions = []) => {
@@ -122,12 +168,33 @@ const RNAListUploadBox = ({
     onUpload,
     loading = false,
 }) => {
-    const parsedRnas = useMemo(() => ({
-        miRNA: parseRnaInput(inputValue.miRNA),
-        mRNA: parseRnaInput(inputValue.mRNA),
-        lncRNA: parseRnaInput(inputValue.lncRNA),
-        circRNA: parseRnaInput(inputValue.circRNA),
-    }), [inputValue]);
+    const parsedRnas = useMemo(() => {
+        const hasMRNADirection = Boolean(
+            workflowParams.hasMRNADirection
+        );
+
+        return {
+            miRNA: parseRnaInput(inputValue.miRNA),
+
+            mRNA: hasMRNADirection
+                ? []
+                : parseRnaInput(inputValue.mRNA),
+
+            mRNA_up: hasMRNADirection
+                ? parseRnaInput(inputValue.mRNAUp)
+                : [],
+
+            mRNA_down: hasMRNADirection
+                ? parseRnaInput(inputValue.mRNADown)
+                : [],
+
+            lncRNA: parseRnaInput(inputValue.lncRNA),
+            circRNA: parseRnaInput(inputValue.circRNA),
+        };
+    }, [
+        inputValue,
+        workflowParams.hasMRNADirection,
+    ]);
 
     const totalCount = useMemo(() => {
         return Object.values(parsedRnas).reduce(
@@ -135,6 +202,19 @@ const RNAListUploadBox = ({
             0
         );
     }, [parsedRnas]);
+
+    const activeRNATypes = useMemo(() => {
+        const mRNATypes = workflowParams.hasMRNADirection
+            ? DIRECTIONAL_MRNA_TYPES
+            : [NON_DIRECTIONAL_MRNA_TYPE];
+
+        return [
+            COMMON_RNA_TYPES[0],
+            ...mRNATypes,
+            COMMON_RNA_TYPES[1],
+            COMMON_RNA_TYPES[2],
+        ];
+    }, [workflowParams.hasMRNADirection]);
 
     const isOverLimit = totalCount > MAX_TOTAL_RNA_COUNT;
     const isEmpty = totalCount === 0;
@@ -150,6 +230,31 @@ const RNAListUploadBox = ({
         onInputValueChange?.({
             ...inputValue,
             [type]: value,
+        });
+    };
+
+    const handleMRNADirectionChange = (hasMRNADirection) => {
+        onWorkflowParamsChange?.({
+            ...workflowParams,
+            hasMRNADirection,
+        });
+
+        onInputValueChange?.({
+            ...inputValue,
+
+            // Directional mode does not use plain mRNA.
+            mRNA: hasMRNADirection
+                ? ""
+                : inputValue.mRNA,
+
+            // Non-directional mode does not use mRNA_up/down.
+            mRNAUp: hasMRNADirection
+                ? inputValue.mRNAUp
+                : "",
+
+            mRNADown: hasMRNADirection
+                ? inputValue.mRNADown
+                : "",
         });
     };
 
@@ -174,7 +279,10 @@ const RNAListUploadBox = ({
             return;
         }
 
-        const validation = validateInput(inputValue);
+        const validation = validateInput({
+            inputValue,
+            activeRNATypes,
+        });
 
         if (!validation.valid) {
             Modal.warning({
@@ -203,6 +311,9 @@ const RNAListUploadBox = ({
         onUpload?.({
             task_name: taskName,
             cancer_type: workflowParams.cancerType,
+            has_mRNA_direction: Boolean(
+                workflowParams.hasMRNADirection
+            ),
             rnas: parsedRnas,
         });
     };
@@ -258,9 +369,14 @@ const RNAListUploadBox = ({
                         </Box>
                     }
                     description={
-                        <Box component="span" sx={{ fontSize: "14px" }}>
+                        <Box
+                            component="span"
+                            sx={{ fontSize: "14px" }}
+                        >
                             Input RNA names separated only by English commas (,).
                             Maximum {MAX_TOTAL_RNA_COUNT} RNAs in total.
+                            When mRNA direction is enabled, use the mRNA Up and
+                            mRNA Down lists instead of the standard mRNA list.
                         </Box>
                     }
                     icon={
@@ -274,15 +390,22 @@ const RNAListUploadBox = ({
                     }
                 />
 
-                <Row gutter={[20, 16]}>
-                    <Col xs={24} md={12}>
-                        <Space direction="vertical" size={6} style={{ width: "100%" }}>
+                <Row gutter={[32, 16]}>
+                    <Col xs={24} lg={9}>
+                        <Space
+                            direction="vertical"
+                            size={6}
+                            style={{ width: "100%" }}
+                        >
                             <Text strong>Task Name</Text>
 
                             <Input
                                 value={workflowParams.taskName}
-                                onChange={(e) =>
-                                    handleWorkflowParamChange("taskName", e.target.value)
+                                onChange={event =>
+                                    handleWorkflowParamChange(
+                                        "taskName",
+                                        event.target.value
+                                    )
                                 }
                                 placeholder="Letters, numbers, underscores and hyphens only"
                                 allowClear
@@ -293,30 +416,73 @@ const RNAListUploadBox = ({
                         </Space>
                     </Col>
 
-                    <Col xs={24} md={12}>
-                        <Space direction="vertical" size={6} style={{ width: "100%" }}>
+                    <Col xs={24} lg={9}>
+                        <Space
+                            direction="vertical"
+                            size={6}
+                            style={{ width: "100%" }}
+                        >
                             <Text strong>Cancer Type</Text>
 
                             <Select
                                 value={workflowParams.cancerType}
-                                onChange={(value) =>
-                                    handleWorkflowParamChange("cancerType", value)
+                                onChange={value =>
+                                    handleWorkflowParamChange(
+                                        "cancerType",
+                                        value
+                                    )
                                 }
                                 options={cancerTypeOptions}
                                 placeholder="Select cancer type"
                                 style={{ width: "100%" }}
-                                disabled={loading || isImmuneMapLoading || isImmuneMapError}
+                                disabled={
+                                    loading ||
+                                    isImmuneMapLoading ||
+                                    isImmuneMapError
+                                }
                                 loading={isImmuneMapLoading}
                                 showSearch
                                 optionFilterProp="label"
                             />
                         </Space>
                     </Col>
+
+                    <Col xs={24} lg={6}>
+                        <Space
+                            direction="vertical"
+                            size={6}
+                            style={{ width: "100%" }}
+                        >
+                            <Text strong>mRNA Direction</Text>
+
+                            <Radio.Group
+                                value={
+                                    workflowParams.hasMRNADirection
+                                }
+                                onChange={event =>
+                                    handleMRNADirectionChange(
+                                        event.target.value
+                                    )
+                                }
+                                disabled={loading}
+                                optionType="button"
+                                buttonStyle="solid"
+                            >
+                                <Radio.Button value={false}>
+                                    No
+                                </Radio.Button>
+
+                                <Radio.Button value={true}>
+                                    Yes
+                                </Radio.Button>
+                            </Radio.Group>
+                        </Space>
+                    </Col>
                 </Row>
 
                 <Row gutter={[20, 20]}>
-                    {RNA_TYPES.map(item => {
-                        const count = parsedRnas[item.key].length;
+                    {activeRNATypes.map(item => {
+                        const count = parsedRnas[item.payloadKey]?.length ?? 0;
 
                         return (
                             <Col key={item.key} xs={24} md={12}>
