@@ -127,6 +127,18 @@ const menuItems = [
                     }
                 ]
             },
+            {
+                key: 'g3',
+                label: 'Recurrent Analysis',
+                type: 'group',
+                children: [
+                    {
+                        key: 'recurrent',
+                        label: 'Recurrent ceRNA',
+                        link: '/database/recurrentceRNA'
+                    }
+                ]
+            }
         ]
     },
     {
