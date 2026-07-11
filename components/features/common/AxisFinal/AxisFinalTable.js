@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Empty, Table } from "antd";
+import { Empty, Popover, Table } from "antd";
 
 import BasicChip from "@/components/ui/chips/BasicChip";
 import EllipsisText from "@/components/common/text/EllipsisText";
@@ -91,7 +91,8 @@ const renderGeneChip = (value, color) => (
     />
 );
 
-const MAX_PROJECT_CHIPS = 3;
+const PROJECT_MATCH_COLUMN_WIDTH = 400;
+const PROJECT_MATCH_COLLAPSE_THRESHOLD = 2;
 
 const isNoneGroupType = (value) => {
     return String(value ?? "").trim().toLowerCase() === "none";
@@ -109,6 +110,39 @@ const getProjectMatchChipColor = (match) => {
     }
 
     return "default";
+};
+
+const getProjectMatchURL = (match) => {
+    const datasetName = String(
+        match?.dataset_name ?? ""
+    ).trim();
+
+    if (!datasetName) {
+        return null;
+    }
+
+    const params = new URLSearchParams({
+        dataset: datasetName,
+    });
+
+    const moduleName = String(
+        match?.module ?? ""
+    ).trim().toLowerCase();
+
+    const groupType = String(
+        match?.group_type ?? ""
+    ).trim().toLowerCase();
+
+    if (
+        moduleName === "module3" &&
+        ["grade", "stage"].includes(groupType)
+    ) {
+        params.set("groupBy", groupType);
+    }
+
+    return (
+        `/database/dataset/annotation?${params.toString()}`
+    );
 };
 
 const getProjectMatchLabel = (match) => {
@@ -131,14 +165,121 @@ const getProjectMatchLabel = (match) => {
     return `${datasetName} · ${groupType}`;
 };
 
+const ProjectMatchChip = ({
+    match,
+    color,
+}) => {
+    const url = getProjectMatchURL(match);
+
+    const chip = (
+        <BasicChip
+            value={getProjectMatchLabel(match)}
+            color={
+                color ||
+                getProjectMatchChipColor(match)
+            }
+            style={{
+                cursor: "pointer",
+            }}
+        />
+    );
+
+    if (!url) {
+        return chip;
+    }
+
+    return (
+        <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+                display: "inline-flex",
+                textDecoration: "none",
+                cursor: "pointer",
+            }}
+            onClick={event => {
+                event.stopPropagation();
+            }}
+        >
+            {chip}
+        </a>
+    );
+};
+
+const ProjectMatchChipList = ({
+    matches,
+    justifyContent = "center",
+}) => {
+    return (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent,
+                gap: 8,
+                flexWrap: "wrap",
+            }}
+        >
+            {matches.map((match, index) => (
+                <ProjectMatchChip
+                    key={[
+                        match?.project_id,
+                        match?.occurrence_id,
+                        match?.source,
+                        match?.module,
+                        match?.dataset_name,
+                        match?.group_type,
+                        match?.group_by,
+                        index,
+                    ].join("-")}
+                    match={match}
+                />
+            ))}
+        </div>
+    );
+};
+
+const RemainingProjectMatches = ({
+    matches,
+}) => {
+    return (
+        <div
+            style={{
+                width: 360,
+                maxWidth: "70vw",
+                maxHeight: 320,
+                overflowY: "auto",
+                padding: 4,
+            }}
+        >
+            <ProjectMatchChipList
+                matches={matches}
+                justifyContent="flex-start"
+            />
+        </div>
+    );
+};
+
 const renderProjectMatchChips = (_, record) => {
-    const matches = Array.isArray(record?.dataset_project_matches)
+    const matches = Array.isArray(
+        record?.dataset_project_matches
+    )
         ? record.dataset_project_matches
         : [];
 
-    const matchCount = Number(record?.dataset_project_match_count ?? matches.length);
+    const reportedMatchCount = Number(
+        record?.dataset_project_match_count ??
+        matches.length
+    );
 
-    if (!matchCount || matches.length === 0) {
+    const matchCount = Number.isFinite(
+        reportedMatchCount
+    )
+        ? reportedMatchCount
+        : matches.length;
+
+    if (matchCount <= 0 || matches.length === 0) {
         return (
             <BasicChip
                 value="No match"
@@ -147,8 +288,36 @@ const renderProjectMatchChips = (_, record) => {
         );
     }
 
-    const visibleMatches = matches.slice(0, MAX_PROJECT_CHIPS);
-    const remainingCount = Math.max(matchCount - visibleMatches.length, 0);
+    /*
+     * One or two matches:
+     * show all returned project chips directly.
+     */
+    if (
+        matchCount <= PROJECT_MATCH_COLLAPSE_THRESHOLD
+    ) {
+        return (
+            <ProjectMatchChipList
+                matches={matches.slice(0, matchCount)}
+            />
+        );
+    }
+
+    /*
+     * More than two matches:
+     * show the first project and collapse all remaining
+     * projects into a Popover.
+     */
+    const firstMatch = matches[0];
+    const remainingMatches = matches.slice(1);
+
+    /*
+     * The backend may limit dataset_project_matches while keeping
+     * dataset_project_match_count as the complete count.
+     */
+    const remainingCount = Math.max(
+        matchCount - 1,
+        0,
+    );
 
     return (
         <div
@@ -156,33 +325,55 @@ const renderProjectMatchChips = (_, record) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 6,
+                gap: 8,
                 flexWrap: "wrap",
             }}
         >
-            {visibleMatches.map((match, index) => (
-                <BasicChip
-                    key={[
-                        match.project_id,
-                        match.occurrence_id,
-                        match.source,
-                        match.module,
-                        match.dataset_name,
-                        match.group_type,
-                        match.group_by,
-                        index,
-                    ].join("-")}
-                    value={getProjectMatchLabel(match)}
-                    color={getProjectMatchChipColor(match)}
-                />
-            ))}
+            <ProjectMatchChip
+                match={firstMatch}
+            />
 
-            {remainingCount > 0 && (
-                <BasicChip
-                    value={`+${remainingCount} projects`}
-                    color="gold"
-                />
-            )}
+            <Popover
+                trigger="click"
+                placement="bottomRight"
+                title={`Matched Projects (${remainingCount})`}
+                content={
+                    remainingMatches.length > 0 ? (
+                        <RemainingProjectMatches
+                            matches={remainingMatches}
+                        />
+                    ) : (
+                        <div>
+                            No additional project details available.
+                        </div>
+                    )
+                }
+            >
+                <span
+                    style={{
+                        display: "inline-flex",
+                        cursor: "pointer",
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onClick={event => {
+                        event.stopPropagation();
+                    }}
+                    onKeyDown={event => {
+                        if (
+                            event.key === "Enter" ||
+                            event.key === " "
+                        ) {
+                            event.stopPropagation();
+                        }
+                    }}
+                >
+                    <BasicChip
+                        value={`+${remainingCount} Projects`}
+                        color="gold"
+                    />
+                </span>
+            </Popover>
         </div>
     );
 };
@@ -402,12 +593,15 @@ const AxisFinalTable = ({
                 title: "Matched Projects",
                 dataIndex: "dataset_project_matches",
                 key: "dataset_project_matches",
-                width: 320,
+                width: PROJECT_MATCH_COLUMN_WIDTH,
                 align: "center",
                 fixed: "right",
                 sorter: (a, b) => {
-                    return Number(a?.dataset_project_match_count ?? 0) -
-                        Number(b?.dataset_project_match_count ?? 0);
+                    return Number(
+                        a?.dataset_project_match_count ?? 0
+                    ) - Number(
+                        b?.dataset_project_match_count ?? 0
+                    );
                 },
                 render: renderProjectMatchChips,
             },

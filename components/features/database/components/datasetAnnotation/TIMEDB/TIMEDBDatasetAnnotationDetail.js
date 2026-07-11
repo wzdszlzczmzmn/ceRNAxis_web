@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Stack } from "@mui/system";
 import { Alert } from "antd";
+import { useRouter } from "next/router";
 
 import DatasetMetadataDescription
     from "@/components/features/database/components/common/DatasetMetadataDescription";
@@ -26,11 +27,50 @@ import {
     useTIMEDBDatasetGroupByOptions
 } from "@/components/features/database/hooks/datasetAnnotation/useTIMEDBDatasetGroupByOptions";
 
+const getSingleQueryValue = (value) => {
+    if (Array.isArray(value)) {
+        return value[0] ?? null;
+    }
+
+    return value ?? null;
+};
+
+const normalizeGroupByValue = (value) => {
+    return String(value ?? "").trim().toLowerCase();
+};
+
+const findAvailableGroupByValue = ({
+    requestedValue,
+    options,
+}) => {
+    const normalizedRequestedValue = normalizeGroupByValue(
+        requestedValue
+    );
+
+    if (!normalizedRequestedValue) {
+        return null;
+    }
+
+    const matchedOption = options.find(
+        option =>
+            normalizeGroupByValue(option?.value) ===
+            normalizedRequestedValue
+    );
+
+    return matchedOption?.value ?? null;
+};
+
 const TIMEDBDatasetAnnotationDetail = ({
     dataset,
     metadata,
     annotationAvailability,
 }) => {
+    const router = useRouter();
+
+    const urlGroupBy = router.isReady
+        ? getSingleQueryValue(router.query.groupBy)
+        : null;
+
     const {
         options: groupByOptions,
         defaultGroupBy,
@@ -43,39 +83,72 @@ const TIMEDBDatasetAnnotationDetail = ({
 
     const [groupBy, setGroupBy] = useState(null);
 
-    const availableGroupByValues = useMemo(() => {
-        return groupByOptions.map((item) => item.value);
-    }, [groupByOptions]);
-
     useEffect(() => {
-        if (!defaultGroupBy) {
+        if (!router.isReady || isGroupByLoading) {
+            return;
+        }
+
+        if (groupByOptions.length === 0) {
             setGroupBy(null);
             return;
         }
 
-        setGroupBy((previousGroupBy) => {
-            const previousStillAvailable =
-                previousGroupBy && availableGroupByValues.includes(previousGroupBy);
+        const urlMatchedGroupBy = findAvailableGroupByValue({
+            requestedValue: urlGroupBy,
+            options: groupByOptions,
+        });
 
-            if (previousStillAvailable) {
-                return previousGroupBy;
+        const defaultMatchedGroupBy = findAvailableGroupByValue({
+            requestedValue: defaultGroupBy,
+            options: groupByOptions,
+        });
+
+        setGroupBy(previousGroupBy => {
+            if (urlMatchedGroupBy) {
+                return urlMatchedGroupBy;
             }
 
-            return defaultGroupBy;
+            const previousMatchedGroupBy = findAvailableGroupByValue({
+                requestedValue: previousGroupBy,
+                options: groupByOptions,
+            });
+
+            if (previousMatchedGroupBy) {
+                return previousMatchedGroupBy;
+            }
+
+            if (defaultMatchedGroupBy) {
+                return defaultMatchedGroupBy;
+            }
+
+            return groupByOptions[0]?.value ?? null;
         });
-    }, [defaultGroupBy, availableGroupByValues]);
+    }, [
+        router.isReady,
+        urlGroupBy,
+        defaultGroupBy,
+        groupByOptions,
+        isGroupByLoading,
+    ]);
 
     const currentGroupByOption = useMemo(() => {
         if (!groupBy) {
             return null;
         }
 
-        return groupByOptions.find((item) => item.value === groupBy) ?? null;
-    }, [groupBy, groupByOptions]);
+        return groupByOptions.find(
+            item => item.value === groupBy
+        ) ?? null;
+    }, [
+        groupBy,
+        groupByOptions,
+    ]);
 
-    const groupType = currentGroupByOption?.groupType ?? null;
+    const groupType =
+        currentGroupByOption?.groupType ?? null;
 
-    const visualizations = currentGroupByOption?.visualizations ?? {};
+    const visualizations =
+        currentGroupByOption?.visualizations ?? {};
 
     return (
         <Stack spacing={4} sx={{ pt: "12px", px: "32px" }}>
