@@ -12,6 +12,7 @@ const DatasetAnnotationContent = ({
     metadata,
     annotationSource,
     annotationAvailability,
+    initialGroupBy = null,
 }) => {
     if (annotationSource === "TCGA") {
         return (
@@ -29,6 +30,7 @@ const DatasetAnnotationContent = ({
                 dataset={dataset}
                 metadata={metadata}
                 annotationAvailability={annotationAvailability}
+                initialGroupBy={initialGroupBy}
             />
         );
     }

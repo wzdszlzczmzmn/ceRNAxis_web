@@ -54,6 +54,9 @@ const resolveDatasetAnnotationSource = ({
 const DatasetAnnotationPage = () => {
     const router = useRouter();
     const dataset = normalizeQueryValue(router.query.dataset);
+    const initialGroupBy = normalizeQueryValue(
+        router.query.groupBy
+    );
 
     const {
         metadata,
@@ -185,6 +188,7 @@ const DatasetAnnotationPage = () => {
                 metadata={metadata}
                 annotationSource={annotationSource}
                 annotationAvailability={annotationAvailability}
+                initialGroupBy={initialGroupBy}
             />
         </>
     );

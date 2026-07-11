@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Stack } from "@mui/system";
 import { Alert } from "antd";
-import { useRouter } from "next/router";
 
 import DatasetMetadataDescription
     from "@/components/features/database/components/common/DatasetMetadataDescription";
@@ -64,12 +63,9 @@ const TIMEDBDatasetAnnotationDetail = ({
     dataset,
     metadata,
     annotationAvailability,
+    initialGroupBy = null,
 }) => {
-    const router = useRouter();
-
-    const urlGroupBy = router.isReady
-        ? getSingleQueryValue(router.query.groupBy)
-        : null;
+    const initializedDatasetRef = useRef(null);
 
     const {
         options: groupByOptions,
@@ -84,17 +80,22 @@ const TIMEDBDatasetAnnotationDetail = ({
     const [groupBy, setGroupBy] = useState(null);
 
     useEffect(() => {
-        if (!router.isReady || isGroupByLoading) {
+        if (isGroupByLoading) {
             return;
         }
 
         if (groupByOptions.length === 0) {
             setGroupBy(null);
+            initializedDatasetRef.current = dataset;
             return;
         }
 
-        const urlMatchedGroupBy = findAvailableGroupByValue({
-            requestedValue: urlGroupBy,
+        const isNewDataset = (
+            initializedDatasetRef.current !== dataset
+        );
+
+        const initialMatchedGroupBy = findAvailableGroupByValue({
+            requestedValue: initialGroupBy,
             options: groupByOptions,
         });
 
@@ -104,17 +105,24 @@ const TIMEDBDatasetAnnotationDetail = ({
         });
 
         setGroupBy(previousGroupBy => {
-            if (urlMatchedGroupBy) {
-                return urlMatchedGroupBy;
-            }
-
             const previousMatchedGroupBy = findAvailableGroupByValue({
                 requestedValue: previousGroupBy,
                 options: groupByOptions,
             });
 
-            if (previousMatchedGroupBy) {
+            /*
+             * For the same dataset, preserve a valid manual selection.
+             */
+            if (!isNewDataset && previousMatchedGroupBy) {
                 return previousMatchedGroupBy;
+            }
+
+            /*
+             * URL groupBy only applies during initialisation
+             * or when switching to a different dataset.
+             */
+            if (initialMatchedGroupBy) {
+                return initialMatchedGroupBy;
             }
 
             if (defaultMatchedGroupBy) {
@@ -123,9 +131,11 @@ const TIMEDBDatasetAnnotationDetail = ({
 
             return groupByOptions[0]?.value ?? null;
         });
+
+        initializedDatasetRef.current = dataset;
     }, [
-        router.isReady,
-        urlGroupBy,
+        dataset,
+        initialGroupBy,
         defaultGroupBy,
         groupByOptions,
         isGroupByLoading,
