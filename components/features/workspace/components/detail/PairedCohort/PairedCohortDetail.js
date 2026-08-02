@@ -30,6 +30,10 @@ import PairedCohortCMapResultSection
     from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortCMapResultSection"
 import PairedCohortDEGPathwaySection
     from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortDEGPathwaySection"
+import PairedCohortCMScoreSection
+    from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortCMScoreSection"
+import PairedCohortSpongeResultSection
+    from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortSpongeResultSection"
 
 const PairedCohortDetail = ({
     task,
@@ -84,6 +88,8 @@ const PairedCohortDetail = ({
 
             <PairedCohortAxisFinalSection task={task} />
 
+            <PairedCohortSpongeResultSection task={task}/>
+
             <PairedCohortCMapResultSection task={task} />
 
             <PairedCohortVolcanoAnalysisSection task={task} />
@@ -95,6 +101,8 @@ const PairedCohortDetail = ({
             <PairedCohortSurvivalSection task={task} />
 
             <PairedCohortDEGPathwaySection task={task} />
+
+            <PairedCohortCMScoreSection task={task} height={680}/>
         </Stack>
     );
 };

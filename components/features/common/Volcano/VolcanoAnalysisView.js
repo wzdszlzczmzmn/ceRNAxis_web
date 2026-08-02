@@ -39,6 +39,10 @@ const DEG_SCOPE_LABEL_MAP = {
     intersect: "Intersect DEG genes",
 };
 
+const PLOT_CONTAINER_SX = {
+    minHeight: 0,
+};
+
 const buildRnaTypeOptions = rnaTypes => {
     return rnaTypes.map(rnaType => ({
         label: RNA_TYPE_LABEL_MAP[rnaType] ?? rnaType,
@@ -145,11 +149,16 @@ const VolcanoAnalysisView = ({
 
     availableDegRnaTypes = [],
     availableDegScopes = ["all"],
+    showDegScopeSelect = false,
+
+    showGroupSelect= false,
+    groupOptions=[],
+    groupValue = null,
+    groupLabel = "Group",
+    onGroupChange,
 
     cutoffsByRnaType = {},
     usePadj = true,
-
-    showDegScopeSelect = null,
 
     missingDescription = null,
     unavailableDescription = null,
@@ -184,7 +193,10 @@ const VolcanoAnalysisView = ({
         });
     }, [volcanoData, usePadj]);
 
-    const geneSearchOptions = getGeneSearchOptions(volcanoData);
+    const geneSearchOptions = useMemo(
+        () => getGeneSearchOptions(volcanoData),
+        [volcanoData]
+    );
 
     const renderPlotContent = () => {
         if (missingDescription) {
@@ -261,7 +273,7 @@ const VolcanoAnalysisView = ({
                 pointOpacity={visualConfig.pointOpacity}
                 plotAspectRatio={visualConfig.plotAspectRatio}
                 highlightGene={searchGene.trim()}
-                containerSx={{ minHeight: 0 }}
+                containerSx={PLOT_CONTAINER_SX}
             />
         );
     };
@@ -312,6 +324,11 @@ const VolcanoAnalysisView = ({
                                 rnaTypeOptions={rnaTypeOptions}
                                 degScopeOptions={degScopeOptions}
                                 showDegScopeSelect={shouldShowDegScopeSelect}
+                                showGroupSelect={showGroupSelect}
+                                groupOptions={groupOptions}
+                                groupValue={groupValue}
+                                groupLabel={groupLabel}
+                                onGroupChange={onGroupChange}
                                 visualConfig={visualConfig}
                                 setVisualConfig={setVisualConfig}
                                 geneSearchOptions={geneSearchOptions}

@@ -21,12 +21,19 @@ import {
 const Log2FCCorrelationControlPanel = ({
     queryConfig,
     setQueryConfig,
+
+    groupOptions = [],
+    groupLabel = "Group",
+
     interactionTypeOptions = [],
+
     visualConfig,
     setVisualConfig,
+
     searchKeyword,
     setSearchKeyword,
     searchOptions = [],
+
     onCollapse,
 }) => {
     return (
@@ -70,14 +77,40 @@ const Log2FCCorrelationControlPanel = ({
             <Divider style={{ margin: "4px 0 8px" }} />
 
             <ControlGroup title="Data">
+                {groupOptions.length > 0 && (
+                    <ControlField label={groupLabel}>
+                        <Select
+                            size="middle"
+                            style={{ width: "100%" }}
+                            value={
+                                queryConfig.groupValue ??
+                                undefined
+                            }
+                            placeholder="Select group"
+                            options={groupOptions}
+                            onChange={value =>
+                                setQueryConfig(prev => ({
+                                    ...prev,
+                                    groupValue: value,
+                                }))
+                            }
+                        />
+                    </ControlField>
+                )}
+
                 <ControlField label="Interaction type">
                     <Select
                         size="middle"
                         style={{ width: "100%" }}
-                        value={queryConfig.interactionType}
+                        value={
+                            queryConfig.interactionType ??
+                            undefined
+                        }
                         placeholder="Select interaction type"
                         options={interactionTypeOptions}
-                        disabled={interactionTypeOptions.length === 0}
+                        disabled={
+                            interactionTypeOptions.length === 0
+                        }
                         onChange={value =>
                             setQueryConfig(prev => ({
                                 ...prev,

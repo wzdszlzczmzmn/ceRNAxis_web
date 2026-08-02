@@ -161,9 +161,11 @@ const generateCustomListQueryTaskItems = (taskInformation) => {
         params.cancer_type ||
         "--";
 
-    const hasMrnaDirection =
+    const hasMrnaDirection = Boolean(
         data.has_mrna_direction ??
-        params.has_mrna_direction;
+        params.has_mrna_direction ??
+        false
+    );
 
     const miRNACount =
         data.miRNA_count ??
@@ -177,6 +179,18 @@ const generateCustomListQueryTaskItems = (taskInformation) => {
         rnaCounts.mRNA ??
         getListCount(rnas.mRNA);
 
+    const mRNAUpCount =
+        data.mRNA_up_count ??
+        data.mrna_up_count ??
+        rnaCounts.mRNA_up ??
+        getListCount(rnas.mRNA_up);
+
+    const mRNADownCount =
+        data.mRNA_down_count ??
+        data.mrna_down_count ??
+        rnaCounts.mRNA_down ??
+        getListCount(rnas.mRNA_down);
+
     const lncRNACount =
         data.lncRNA_count ??
         data.lncrna_count ??
@@ -189,10 +203,25 @@ const generateCustomListQueryTaskItems = (taskInformation) => {
         rnaCounts.circRNA ??
         getListCount(rnas.circRNA);
 
+    const calculatedTotalRNACount = hasMrnaDirection
+        ? (
+            miRNACount +
+            mRNAUpCount +
+            mRNADownCount +
+            lncRNACount +
+            circRNACount
+        )
+        : (
+            miRNACount +
+            mRNACount +
+            lncRNACount +
+            circRNACount
+        );
+
     const totalRNACount =
         data.total_rna_count ??
         rnaCounts.total ??
-        miRNACount + mRNACount + lncRNACount + circRNACount;
+        calculatedTotalRNACount;
 
     const items = [
         {
@@ -229,12 +258,33 @@ const generateCustomListQueryTaskItems = (taskInformation) => {
             children: miRNACount,
             span: 1,
         },
-        {
+    ];
+
+    if (hasMrnaDirection) {
+        items.push(
+            {
+                key: "mRNAUpCount",
+                label: "mRNA Up Count",
+                children: mRNAUpCount,
+                span: 1,
+            },
+            {
+                key: "mRNADownCount",
+                label: "mRNA Down Count",
+                children: mRNADownCount,
+                span: 1,
+            }
+        );
+    } else {
+        items.push({
             key: "mRNACount",
             label: "mRNA Count",
             children: mRNACount,
             span: 1,
-        },
+        });
+    }
+
+    items.push(
         {
             key: "lncRNACount",
             label: "lncRNA Count",
@@ -246,8 +296,8 @@ const generateCustomListQueryTaskItems = (taskInformation) => {
             label: "circRNA Count",
             children: circRNACount,
             span: 1,
-        },
-    ];
+        }
+    );
 
     if (data.map_info) {
         items.splice(2, 0, {
@@ -428,10 +478,98 @@ const generateHybridReferenceTaskItems = (taskInformation) => {
     ];
 };
 
+const generateSCSTHybridReferenceTaskItems = (taskInformation) => {
+    const data = getTaskData(taskInformation);
+
+    const cutoffs = data.cutoffs ?? {};
+    const uploadedRnaTypes = Array.isArray(data.uploaded_rna_types)
+        ? data.uploaded_rna_types
+        : [];
+
+    const dataTypeLabel =
+        data.data_type_label ||
+        (
+            data.data_type === "sc"
+                ? "Single-cell RNA-seq"
+                : data.data_type === "st"
+                    ? "Spatial transcriptomics"
+                    : data.data_type
+        ) ||
+        "--";
+
+    return [
+        {
+            key: "TaskName",
+            label: "Task Name",
+            children: data.task_name || "--",
+            span: 2,
+        },
+        {
+            key: "DataType",
+            label: "Data Type",
+            children: formatChipValue(
+                dataTypeLabel,
+                data.data_type === "st" ? "purple" : "blue"
+            ),
+            span: 1,
+        },
+        {
+            key: "GroupColumn",
+            label: "Group Column",
+            children: formatChipValue(data.group_col, "geekblue"),
+            span: 1,
+        },
+        {
+            key: "MapInfo",
+            label: "Immune Annotation File",
+            children: formatChipValue(
+                formatMapInfoLabel(data.map_info),
+                "blue"
+            ),
+            span: 1,
+        },
+        {
+            key: "TCGAType",
+            label: "TCGA Reference Type",
+            children: formatChipValue(data.tcga_type, "purple"),
+            span: 1,
+        },
+        {
+            key: "LncRNAType",
+            label: "lncRNA Reference Value Type",
+            children: formatChipValue(data.lncrna_type, "cyan"),
+            span: 1,
+        },
+        {
+            key: "UsePadj",
+            label: "P-value Type",
+            children: formatUsePadj(data.use_padj),
+            span: 1,
+        },
+        {
+            key: "UploadedRnaTypes",
+            label: "Uploaded RNA Types",
+            children: formatUploadedRnaTypes(uploadedRnaTypes),
+            span: 2,
+        },
+        {
+            key: "mRNACutoff",
+            label: "mRNA DEG Cutoff",
+            children: formatCutoff(
+                cutoffs.mRNA,
+                "blue",
+                data.use_padj ? "green" : "orange"
+            ),
+            span: 2,
+        },
+    ];
+};
+
 const TASK_INFORMATION_ITEM_GENERATOR_MAP = {
     CustomListQueryTask: generateCustomListQueryTaskItems,
     PairedCohortTask: generatePairedCohortTaskItems,
     HybridReferenceTask: generateHybridReferenceTaskItems,
+    SCSTHybridReferenceTask: generateSCSTHybridReferenceTaskItems,
 };
 
 export const generateTaskInformationItems = (taskInformation) => {

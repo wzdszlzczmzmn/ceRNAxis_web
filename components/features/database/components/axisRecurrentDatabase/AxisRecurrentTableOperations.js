@@ -6,7 +6,7 @@ import { Statistic } from "antd";
 import SplitterControlButton
     from "@/components/common/button/SplitterControlButton";
 import AxisRecurrentSearchBar
-    from "@/components/features/database/components/axisRecurrentDatabase/AxisRecurrentSearchBar"
+    from "@/components/features/database/components/axisRecurrentDatabase/AxisRecurrentSearchBar";
 
 
 const AxisRecurrentTableOperations = ({
@@ -19,9 +19,16 @@ const AxisRecurrentTableOperations = ({
 }) => {
     return (
         <Stack
-            direction="row"
+            direction={{
+                xs: "column",
+                lg: "row",
+            }}
+            spacing={2}
             justifyContent="space-between"
-            alignItems="center"
+            alignItems={{
+                xs: "stretch",
+                lg: "center",
+            }}
         >
             <SplitterControlButton
                 isShowLeft={isShowLeft}
@@ -30,9 +37,15 @@ const AxisRecurrentTableOperations = ({
             />
 
             <Stack
-                direction="row"
+                direction={{
+                    xs: "column",
+                    md: "row",
+                }}
                 spacing={2}
-                alignItems="center"
+                alignItems={{
+                    xs: "stretch",
+                    md: "center",
+                }}
             >
                 <Stack
                     direction="row"
@@ -66,5 +79,6 @@ const AxisRecurrentTableOperations = ({
         </Stack>
     );
 };
+
 
 export default AxisRecurrentTableOperations;

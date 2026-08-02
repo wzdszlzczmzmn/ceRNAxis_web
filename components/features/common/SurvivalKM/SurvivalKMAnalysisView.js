@@ -35,6 +35,11 @@ const SurvivalKMAnalysisView = ({
     titleSecondary,
     summary,
 
+    groupOptions = [],
+    groupValue = null,
+    groupLabel = "Group",
+    onGroupChange,
+
     isLoading = false,
     isError = false,
 
@@ -43,7 +48,8 @@ const SurvivalKMAnalysisView = ({
     emptyDescription = "No survival analysis data",
 
     showTcgaBasedTag = false,
-    tcgaBasedTooltip = "Survival grouping and Kaplan-Meier analysis are based on TCGA reference survival data.",
+    tcgaBasedTooltip =
+        "Survival grouping and Kaplan-Meier analysis are based on TCGA reference survival data.",
 }) => {
     const [visualConfig, setVisualConfig] = useState(DEFAULT_VISUAL_CONFIG);
     const [isControlPanelCollapsed, setIsControlPanelCollapsed] =
@@ -169,9 +175,15 @@ const SurvivalKMAnalysisView = ({
                             max={500}
                         >
                             <SurvivalKMControlPanel
+                                groupOptions={groupOptions}
+                                groupValue={groupValue}
+                                groupLabel={groupLabel}
+                                onGroupChange={onGroupChange}
+
                                 visualConfig={visualConfig}
                                 setVisualConfig={setVisualConfig}
                                 summary={summary}
+
                                 onCollapse={() =>
                                     setIsControlPanelCollapsed(true)
                                 }

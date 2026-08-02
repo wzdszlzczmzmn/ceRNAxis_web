@@ -27,6 +27,10 @@ const buildPairLabel = item => {
 const ExpCorrelationControlPanel = ({
     queryConfig,
     setQueryConfig,
+
+    groupOptions = [],
+    groupLabel = "Group",
+
     visualConfig,
     setVisualConfig,
     validTypes = [],
@@ -90,6 +94,35 @@ const ExpCorrelationControlPanel = ({
             <Divider style={{ margin: "4px 0 8px" }} />
 
             <ControlGroup title="Data">
+                {groupOptions.length > 0 && (
+                    <ControlField label={groupLabel}>
+                        <Select
+                            size="middle"
+                            style={{ width: "100%" }}
+                            value={
+                                queryConfig.groupValue ??
+                                undefined
+                            }
+                            placeholder="Select group"
+                            options={groupOptions}
+                            onChange={value =>
+                                setQueryConfig(prev => ({
+                                    ...prev,
+
+                                    groupValue: value,
+
+                                    // group 改变后旧 selection
+                                    // 属于旧 correlation file，
+                                    // 因此全部清空
+                                    type: null,
+                                    gene1: null,
+                                    gene2: null,
+                                }))
+                            }
+                        />
+                    </ControlField>
+                )}
+
                 <ControlField label="Interaction type">
                     <Select
                         size="middle"

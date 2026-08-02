@@ -1,26 +1,101 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, Card, Empty, Flex, Input, Space, Tabs, Typography, message } from "antd";
+import {
+    Button,
+    Card,
+    Empty,
+    Flex,
+    Input,
+    Space,
+    Tabs,
+    Typography,
+    message,
+} from "antd";
 import { CopyOutlined } from "@ant-design/icons";
 import BasicChip from "@/components/ui/chips/BasicChip";
 
 const { Search } = Input;
 const { Text } = Typography;
 
-const RNA_TYPES = [
-    { key: "miRNA", label: "miRNA", color: "volcano" },
-    { key: "mRNA", label: "mRNA", color: "blue" },
-    { key: "lncRNA", label: "lncRNA", color: "green" },
-    { key: "circRNA", label: "circRNA", color: "purple" },
+const BASE_RNA_TYPES = [
+    {
+        key: "miRNA",
+        label: "miRNA",
+        color: "volcano",
+    },
+    {
+        key: "lncRNA",
+        label: "lncRNA",
+        color: "green",
+    },
+    {
+        key: "circRNA",
+        label: "circRNA",
+        color: "purple",
+    },
 ];
 
+const STANDARD_MRNA_TYPE = {
+    key: "mRNA",
+    label: "mRNA",
+    color: "blue",
+};
+
+const DIRECTIONAL_MRNA_TYPES = [
+    {
+        key: "mRNA_up",
+        label: "mRNA Up",
+        color: "green",
+    },
+    {
+        key: "mRNA_down",
+        label: "mRNA Down",
+        color: "red",
+    },
+];
+
+const getTaskData = (task) => {
+    return task?.data ?? task ?? {};
+};
+
+const getHasMrnaDirection = (task) => {
+    const data = getTaskData(task);
+    const params = data.params ?? data.workflow_params ?? {};
+
+    return Boolean(
+        data.has_mrna_direction ??
+        params.has_mrna_direction ??
+        false
+    );
+};
+
+const getRnaTypes = (task) => {
+    const hasMrnaDirection = getHasMrnaDirection(task);
+
+    return [
+        BASE_RNA_TYPES[0],
+        ...(hasMrnaDirection
+            ? DIRECTIONAL_MRNA_TYPES
+            : [STANDARD_MRNA_TYPE]),
+        BASE_RNA_TYPES[1],
+        BASE_RNA_TYPES[2],
+    ];
+};
+
 const getRnaList = (task, key) => {
-    const rnas = task?.data?.rnas ?? task?.data?.input_rnas ?? {};
+    const data = getTaskData(task);
+
+    const rnas =
+        data.rnas ??
+        data.input_rnas ??
+        {};
 
     const value = rnas[key];
 
-    if (Array.isArray(value)) return value;
+    if (Array.isArray(value)) {
+        return value;
+    }
 
     if (typeof value === "string" && value.trim()) {
         return value
@@ -32,24 +107,39 @@ const getRnaList = (task, key) => {
     return [];
 };
 
-const RNAListPanel = ({ label, color, list = [] }) => {
+const RNAListPanel = ({
+    label,
+    color,
+    list = [],
+}) => {
     const [keyword, setKeyword] = useState("");
 
     const filteredList = useMemo(() => {
-        const value = keyword.trim().toLowerCase();
+        const normalizedKeyword = keyword
+            .trim()
+            .toLowerCase();
 
-        if (!value) return list;
+        if (!normalizedKeyword) {
+            return list;
+        }
 
         return list.filter(item =>
-            String(item).toLowerCase().includes(value)
+            String(item)
+                .toLowerCase()
+                .includes(normalizedKeyword)
         );
     }, [list, keyword]);
 
     const handleCopy = async () => {
-        if (list.length === 0) return;
+        if (list.length === 0) {
+            return;
+        }
 
         try {
-            await navigator.clipboard.writeText(list.join(","));
+            await navigator.clipboard.writeText(
+                list.join(",")
+            );
+
             message.success(`${label} list copied.`);
         } catch {
             message.error("Failed to copy RNA list.");
@@ -66,14 +156,28 @@ const RNAListPanel = ({ label, color, list = [] }) => {
     }
 
     return (
-        <Space direction="vertical" size={16} style={{ width: "100%" }}>
-            <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
+        <Space
+            direction="vertical"
+            size={16}
+            style={{ width: "100%" }}
+        >
+            <Flex
+                justify="space-between"
+                align="center"
+                wrap="wrap"
+                gap={12}
+            >
                 <Search
                     allowClear
                     placeholder={`Search ${label}`}
                     value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    style={{ width: 320, maxWidth: "100%" }}
+                    onChange={(event) =>
+                        setKeyword(event.target.value)
+                    }
+                    style={{
+                        width: 320,
+                        maxWidth: "100%",
+                    }}
                 />
 
                 <Space size={8}>
@@ -91,9 +195,9 @@ const RNAListPanel = ({ label, color, list = [] }) => {
             </Flex>
 
             <Flex wrap="wrap" gap={8}>
-                {filteredList.map(item => (
+                {filteredList.map((item, index) => (
                     <BasicChip
-                        key={item}
+                        key={`${item}-${index}`}
                         value={item}
                         color={color}
                     />
@@ -104,26 +208,41 @@ const RNAListPanel = ({ label, color, list = [] }) => {
 };
 
 const SubmittedRNAListCard = ({ task }) => {
-    const items = RNA_TYPES.map(item => {
-        const list = getRnaList(task, item.key);
+    const rnaTypes = useMemo(
+        () => getRnaTypes(task),
+        [task]
+    );
 
-        return {
-            key: item.key,
-            label: `${item.label} (${list.length})`,
-            children: (
-                <RNAListPanel
-                    label={item.label}
-                    color={item.color}
-                    list={list}
-                />
-            ),
-        };
-    });
+    const items = useMemo(
+        () =>
+            rnaTypes.map(item => {
+                const list = getRnaList(
+                    task,
+                    item.key
+                );
+
+                return {
+                    key: item.key,
+                    label: `${item.label} (${list.length})`,
+                    children: (
+                        <RNAListPanel
+                            label={item.label}
+                            color={item.color}
+                            list={list}
+                        />
+                    ),
+                };
+            }),
+        [task, rnaTypes]
+    );
+
+    const defaultActiveKey =
+        items[0]?.key ?? "miRNA";
 
     return (
         <Card title="Submitted RNA Lists">
             <Tabs
-                defaultActiveKey="miRNA"
+                defaultActiveKey={defaultActiveKey}
                 items={items}
                 style={{ marginTop: -16 }}
             />

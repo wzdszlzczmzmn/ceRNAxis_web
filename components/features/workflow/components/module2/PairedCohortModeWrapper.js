@@ -485,7 +485,7 @@ const Module2SubmitWrapper = () => {
                             danger
                             icon={<FileSearchOutlined />}
                             disabled={isSubmitting}
-                            href='/workspace/detail?taskId=2c09007c-e03e-43bb-a126-4757dd1326be'
+                            href='/workspace/detail?taskId=37051bf6-5b88-4ec8-a958-b36a28070109'
                             target='_blank'
                         >
                             View Demo Result

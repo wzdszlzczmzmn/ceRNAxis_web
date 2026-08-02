@@ -1,8 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import {
+    useMemo,
+    useState,
+} from "react";
+
 import { Stack } from "@mui/system";
-import { Space } from "antd";
+import {
+    Button,
+    Tooltip,
+    Typography,
+} from "antd";
+import {
+    CheckCircleOutlined,
+    CloseCircleOutlined,
+    FileTextOutlined,
+} from "@ant-design/icons";
+import Link from "next/link";
 
 import SplitterLayout
     from "@/components/layouts/SplitterLayout";
@@ -14,15 +28,20 @@ import BasicChip
     from "@/components/ui/chips/BasicChip";
 import { StyledTable }
     from "@/components/ui/table/StyledTable";
-import useAxisRecurrentMeta from "@/components/features/database/hooks/axisRecurrentDatabase/useAxisRecurrentMeta"
-import useAxisRecurrentRecords from "@/components/features/database/hooks/axisRecurrentDatabase/useAxisRecurrentRecords"
+import useAxisRecurrentMeta
+    from "@/components/features/database/hooks/axisRecurrentDatabase/useAxisRecurrentMeta";
+import useAxisRecurrentRecords
+    from "@/components/features/database/hooks/axisRecurrentDatabase/useAxisRecurrentRecords";
 import AxisRecurrentFilterCollapse
-    from "@/components/features/database/components/axisRecurrentDatabase/AxisRecurrentFilterCollapse"
+    from "@/components/features/database/components/axisRecurrentDatabase/AxisRecurrentFilterCollapse";
 import AxisRecurrentTableOperations
-    from "@/components/features/database/components/axisRecurrentDatabase/AxisRecurrentTableOperations"
+    from "@/components/features/database/components/axisRecurrentDatabase/AxisRecurrentTableOperations";
 
 
-const renderRNAChip = (value, color) => {
+const renderRNAChip = (
+    value,
+    color,
+) => {
     if (!value) {
         return "-";
     }
@@ -36,6 +55,78 @@ const renderRNAChip = (value, color) => {
 };
 
 
+const renderCount = value => {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return 0;
+    }
+
+    return number;
+};
+
+
+const formatPercent = value => {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return "-";
+    }
+
+    return `${(number * 100).toFixed(1)}%`;
+};
+
+
+const renderAvailability = value => {
+    if (value) {
+        return (
+            <Tooltip title="Available">
+                <CheckCircleOutlined
+                    style={{
+                        color: "#52c41a",
+                        fontSize: "18px",
+                    }}
+                />
+            </Tooltip>
+        );
+    }
+
+    return (
+        <Tooltip title="Unavailable">
+            <CloseCircleOutlined
+                style={{
+                    color: "#bfbfbf",
+                    fontSize: "18px",
+                }}
+            />
+        </Tooltip>
+    );
+};
+
+
+const renderConsistency = value => {
+    if (value === null || value === undefined) {
+        return "-";
+    }
+
+    return (
+        <BasicChip
+            value={
+                value
+                    ? "Consistent"
+                    : "Inconsistent"
+            }
+            color={value ? "green" : "default"}
+        />
+    );
+};
+
+
+const getAxisFinalSummary = record => {
+    return record?.axis_final_summary || null;
+};
+
+
 const columns = [
     {
         title: "miRNA",
@@ -43,6 +134,7 @@ const columns = [
         key: "miRNA",
         align: "center",
         fixed: "left",
+        width: 150,
         sorter: true,
         render: value => renderRNAChip(
             value,
@@ -55,6 +147,7 @@ const columns = [
         key: "mRNA",
         align: "center",
         fixed: "left",
+        width: 140,
         sorter: true,
         render: value => renderRNAChip(
             value,
@@ -62,32 +155,30 @@ const columns = [
         ),
     },
     {
-        title: "lncRNA",
-        dataIndex: "lncRNA",
-        key: "lncRNA",
+        title: "lncRNA/circRNA",
+        key: "ceRNA",
         align: "center",
-        sorter: true,
-        render: value => renderRNAChip(
-            value,
-            "cyan",
-        ),
-    },
-    {
-        title: "circRNA",
-        dataIndex: "circRNA",
-        key: "circRNA",
-        align: "center",
-        sorter: true,
-        render: value => renderRNAChip(
-            value,
-            "gold",
-        ),
+        width: 170,
+        render: (_, record) => {
+            if (record.lncRNA) {
+                return renderRNAChip(
+                    record.lncRNA,
+                    "cyan",
+                );
+            }
+
+            return renderRNAChip(
+                record.circRNA,
+                "gold",
+            );
+        },
     },
     {
         title: "Axis Type",
         dataIndex: "axis_type",
         key: "axis_type",
         align: "center",
+        width: 190,
         sorter: true,
         render: value => (
             <BasicChip
@@ -96,87 +187,273 @@ const columns = [
             />
         ),
     },
-    {
-        title: "Projects",
-        dataIndex: "project_count",
-        key: "project_count",
-        align: "center",
-        sorter: true,
-    },
+
     {
         title: "Datasets",
         dataIndex: "dataset_count",
         key: "dataset_count",
         align: "center",
+        width: 100,
         sorter: true,
+        render: renderCount,
     },
     {
-        title: "TCGA Projects",
-        dataIndex: "tcga_project_count",
-        key: "tcga_project_count",
+        title: "Contexts",
+        dataIndex: "context_count",
+        key: "context_count",
         align: "center",
+        width: 100,
         sorter: true,
+        render: renderCount,
+    },
+
+    {
+        title: "TCGA Datasets",
+        dataIndex: "tcga_dataset_count",
+        key: "tcga_dataset_count",
+        align: "center",
+        width: 180,
+        sorter: true,
+        render: renderCount,
     },
     {
-        title: "TIMEDB Projects",
-        dataIndex: "timedb_project_count",
-        key: "timedb_project_count",
+        title: "TIMEDB Datasets",
+        dataIndex: "timedb_dataset_count",
+        key: "timedb_dataset_count",
         align: "center",
+        width: 180,
         sorter: true,
+        render: renderCount,
     },
     {
-        title: "Dominant Regulation",
-        dataIndex: "dominant_axis_regulation",
-        key: "dominant_axis_regulation",
+        title: "TCGA Contexts",
+        dataIndex: "tcga_context_count",
+        key: "tcga_context_count",
         align: "center",
+        width: 180,
+        render: renderCount,
+    },
+    {
+        title: "TIMEDB Contexts",
+        dataIndex: "timedb_context_count",
+        key: "timedb_context_count",
+        align: "center",
+        width: 180,
+        render: renderCount,
+    },
+
+    {
+        title: "Module2 Contexts",
+        dataIndex: "module2_context_count",
+        key: "module2_context_count",
+        align: "center",
+        width: 180,
+        render: renderCount,
+    },
+    {
+        title: "Module3 Contexts",
+        dataIndex: "module3_context_count",
+        key: "module3_context_count",
+        align: "center",
+        width: 180,
+        render: renderCount,
+    },
+
+    {
+        title: "Axis Final",
+        dataIndex: "axis_final_context_count",
+        key: "axis_final_context_count",
+        align: "center",
+        width: 110,
+        sorter: true,
+        render: renderCount,
+    },
+    {
+        title: "Sponge",
+        dataIndex: "sponge_context_count",
+        key: "sponge_context_count",
+        align: "center",
+        width: 100,
+        sorter: true,
+        render: renderCount,
+    },
+    {
+        title: "Both",
+        dataIndex: "both_result_context_count",
+        key: "both_result_context_count",
+        align: "center",
+        width: 90,
         sorter: true,
         render: value => (
-            <BasicChip
-                value={value || "-"}
-                color="volcano"
-            />
+            <Tooltip title="Contexts containing both Axis Final and Sponge">
+                <span>
+                    {renderCount(value)}
+                </span>
+            </Tooltip>
         ),
     },
+
     {
-        title: "Pattern Count",
-        dataIndex: "regulation_pattern_count",
+        title: "Axis Final Available",
+        dataIndex: "has_axis_final",
+        key: "has_axis_final",
+        align: "center",
+        width: 180,
+        render: renderAvailability,
+    },
+    {
+        title: "Sponge Available",
+        dataIndex: "has_sponge",
+        key: "has_sponge",
+        align: "center",
+        width: 180,
+        render: renderAvailability,
+    },
+
+    {
+        title: "Dominant Regulation",
+        key: "dominant_axis_regulation",
+        align: "center",
+        width: 175,
+        render: (_, record) => {
+            const summary = getAxisFinalSummary(record);
+
+            if (!summary) {
+                return "-";
+            }
+
+            const value = (
+                summary.dominant_axis_regulation
+                || "-"
+            );
+
+            return (
+                <BasicChip
+                    value={value}
+                    color={
+                        value === "down_up_down"
+                            ? "blue"
+                            : "volcano"
+                    }
+                />
+            );
+        },
+    },
+    {
+        title: "Patterns",
         key: "regulation_pattern_count",
         align: "center",
+        width: 100,
         sorter: true,
+        render: (_, record) => {
+            const summary = getAxisFinalSummary(record);
+
+            return summary
+                ? renderCount(
+                    summary.regulation_pattern_count
+                )
+                : "-";
+        },
     },
     {
         title: "Dominant Count",
-        dataIndex: "dominant_regulation_count",
         key: "dominant_regulation_count",
         align: "center",
+        width: 180,
         sorter: true,
+        render: (_, record) => {
+            const summary = getAxisFinalSummary(record);
+
+            return summary
+                ? renderCount(
+                    summary.dominant_regulation_count
+                )
+                : "-";
+        },
+    },
+    {
+        title: "Observations",
+        key: "observation_count",
+        align: "center",
+        width: 115,
+        render: (_, record) => {
+            const summary = getAxisFinalSummary(record);
+
+            return summary
+                ? renderCount(
+                    summary.observation_count
+                )
+                : "-";
+        },
+    },
+    {
+        title: "Dominant Ratio",
+        key: "dominant_regulation_ratio",
+        align: "center",
+        width: 180,
+        render: (_, record) => {
+            const summary = getAxisFinalSummary(record);
+
+            return summary
+                ? formatPercent(
+                    summary.dominant_regulation_ratio
+                )
+                : "-";
+        },
     },
     {
         title: "Consistency",
-        dataIndex: "regulation_consistent",
         key: "regulation_consistent",
         align: "center",
-        render: value => (
-            <BasicChip
-                value={
-                    value
-                        ? "Consistent"
-                        : "Inconsistent"
-                }
-                color={value ? "green" : "default"}
-            />
+        width: 130,
+        render: (_, record) => {
+            const summary = getAxisFinalSummary(record);
+
+            return renderConsistency(
+                summary?.regulation_consistent
+            );
+        },
+    },
+
+    {
+        title: "Action",
+        key: "action",
+        align: "center",
+        fixed: "right",
+        width: 110,
+        render: (_, record) => (
+            <Link
+                href={{
+                    pathname: "/database/recurrentceRNA/detail",
+                    query: {
+                        signature: record.axis_signature,
+                    },
+                }}
+                target="_blank"
+            >
+                <Button
+                    type="primary"
+                    icon={<FileTextOutlined />}
+                >
+                    Detail
+                </Button>
+            </Link>
         ),
     },
 ];
 
 
-const AxisRecurrentTable = () => {
+const AxisRecurrentTable = ({
+    initialSearch = "",
+}) => {
     const [isShowLeft, setIsShowLeft] = useState(true);
 
     const {
         meta,
         patternMeta,
         filterOptions,
+        defaultFilters,
+        defaultSort,
         isLoading: isMetaLoading,
         isError: isMetaError,
     } = useAxisRecurrentMeta();
@@ -193,7 +470,17 @@ const AxisRecurrentTable = () => {
         clearFilters,
         handleSearch,
         handleTableChange,
-    } = useAxisRecurrentRecords();
+    } = useAxisRecurrentRecords({
+        initialPattern: initialSearch,
+        defaultFilters,
+        defaultSort,
+        enabled: Boolean(meta),
+    });
+
+    const tableColumns = useMemo(
+        () => columns,
+        [],
+    );
 
     if (isMetaLoading) {
         return (
@@ -206,7 +493,7 @@ const AxisRecurrentTable = () => {
         );
     }
 
-    if (isMetaError) {
+    if (isMetaError || isError) {
         return (
             <ErrorView
                 containerSx={{
@@ -245,8 +532,8 @@ const AxisRecurrentTable = () => {
                     />
 
                     <StyledTable
-                        rowKey="id"
-                        columns={columns}
+                        rowKey="axis_key"
+                        columns={tableColumns}
                         dataSource={records}
                         loading={isLoading}
                         scroll={{
@@ -263,8 +550,6 @@ const AxisRecurrentTable = () => {
                                 50,
                                 100,
                             ],
-                            showTotal: total =>
-                                `${total} recurrent axes`,
                         }}
                         onChange={handleTableChange}
                     />
@@ -273,5 +558,6 @@ const AxisRecurrentTable = () => {
         />
     );
 };
+
 
 export default AxisRecurrentTable;

@@ -31,6 +31,10 @@ import HybridReferenceSurvivalSection
     from "@/components/features/workspace/components/detail/HybridReference/HybridReferenceSurvivalSection"
 import HybridReferenceDEGPathwaySection
     from "@/components/features/workspace/components/detail/HybridReference/HybridReferenceDEGPathwaySection"
+import HybridReferenceCMScoreSection
+    from "@/components/features/workspace/components/detail/HybridReference/HybridReferenceCMScoreSection"
+import HybridReferenceSpongeResultSection
+    from "@/components/features/workspace/components/detail/HybridReference/HybridReferenceSpongeResultSection"
 
 const HybridReferenceDetail = ({
     task,
@@ -85,6 +89,8 @@ const HybridReferenceDetail = ({
 
             <HybridReferenceAxisFinalSection task={task} />
 
+            <HybridReferenceSpongeResultSection task={task}/>
+
             <HybridReferenceCMapResultSection task={task} />
 
             <HybridReferenceVolcanoAnalysisSection task={task} />
@@ -96,6 +102,8 @@ const HybridReferenceDetail = ({
             <HybridReferenceSurvivalSection task={task} />
 
             <HybridReferenceDEGPathwaySection task={task} />
+
+            <HybridReferenceCMScoreSection task={task} height={680}/>
         </Stack>
     );
 };

@@ -352,7 +352,7 @@ const NetworkWrapper = () => {
                             danger
                             icon={<FileSearchOutlined />}
                             disabled={isSubmitting}
-                            href='/workspace/detail?taskId=35fb8c89-a674-469f-a670-ea4bebd312ab'
+                            href='/workspace/detail?taskId=9720aebe-3be4-4262-bd57-cb02d09ce42f'
                             target='_blank'
                         >
                             View Demo Result

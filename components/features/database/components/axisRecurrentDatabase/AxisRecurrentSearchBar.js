@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Button,
     Input,
@@ -33,22 +33,45 @@ const AxisRecurrentSearchBar = ({
         onSearch("");
     };
 
-    const patternHelp = (
-        <div>
+    const patternHelp = useMemo(() => {
+        const format = (
+            patternMeta?.format
+            || "miRNA|mRNA|lncRNA|circRNA"
+        );
+        const wildcard = patternMeta?.wildcard || "*";
+        const examples = Array.isArray(patternMeta?.examples)
+            ? patternMeta.examples
+            : [];
+
+        return (
             <div>
-                Format: miRNA|mRNA|lncRNA|circRNA
+                <div>
+                    Format: {format}
+                </div>
+
+                <div>
+                    Use {wildcard} as a wildcard.
+                </div>
+
+                {
+                    patternMeta?.empty_segment !== false && (
+                        <div>
+                            Leave a segment empty to require
+                            an empty RNA field.
+                        </div>
+                    )
+                }
+
+                {
+                    examples.map(example => (
+                        <div key={example}>
+                            Example: {example}
+                        </div>
+                    ))
+                }
             </div>
-            <div>
-                Use * as a wildcard.
-            </div>
-            <div>
-                Leave a segment empty to require an empty RNA field.
-            </div>
-            <div>
-                Example: hsa-mir-*|BRD7|BAZ1A|
-            </div>
-        </div>
-    );
+        );
+    }, [patternMeta]);
 
     return (
         <Space.Compact>
@@ -61,8 +84,9 @@ const AxisRecurrentSearchBar = ({
                 onClear={handleClear}
                 onPressEnter={handleSubmit}
                 placeholder={
-                    patternMeta?.placeholder ||
-                    "miRNA|mRNA|lncRNA|circRNA"
+                    patternMeta?.placeholder
+                    || patternMeta?.format
+                    || "miRNA|mRNA|lncRNA|circRNA"
                 }
                 suffix={
                     <Tooltip title={patternHelp}>
@@ -81,5 +105,6 @@ const AxisRecurrentSearchBar = ({
         </Space.Compact>
     );
 };
+
 
 export default AxisRecurrentSearchBar;

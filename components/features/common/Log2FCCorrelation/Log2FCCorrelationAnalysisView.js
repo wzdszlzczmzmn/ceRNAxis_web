@@ -62,6 +62,9 @@ const Log2FCCorrelationAnalysisView = ({
     titlePrimary,
     titleSecondary,
 
+    groupOptions = [],
+    groupLabel = "Group",
+
     availableTypes = [],
 
     isLoading = false,
@@ -85,7 +88,10 @@ const Log2FCCorrelationAnalysisView = ({
 
     useEffect(() => {
         setSearchKeyword("");
-    }, [queryConfig?.interactionType]);
+    }, [
+        queryConfig?.groupValue,
+        queryConfig?.interactionType,
+    ]);
 
     const renderPlotContent = () => {
         if (missingDescription) {
@@ -93,7 +99,9 @@ const Log2FCCorrelationAnalysisView = ({
                 <EmptyView
                     bordered
                     description={missingDescription}
-                    containerSx={{ height: "100%" }}
+                    containerSx={{
+                        height: "100%",
+                    }}
                 />
             );
         }
@@ -102,36 +110,78 @@ const Log2FCCorrelationAnalysisView = ({
             return (
                 <EmptyView
                     bordered
-                    description={unavailableDescription}
-                    containerSx={{ height: "100%" }}
-                />
-            );
-        }
-
-        if (!availableTypes.length || !queryConfig?.interactionType) {
-            return (
-                <EmptyView
-                    bordered
-                    description="No available background interaction types"
-                    containerSx={{ height: "100%" }}
+                    description={
+                        unavailableDescription
+                    }
+                    containerSx={{
+                        height: "100%",
+                    }}
                 />
             );
         }
 
         if (isLoading) {
-            return <LoadingView containerSx={{ height: "100%" }} />;
+            return (
+                <LoadingView
+                    containerSx={{
+                        height: "100%",
+                    }}
+                />
+            );
         }
 
         if (isError) {
-            return <ErrorView containerSx={{ height: "100%" }} />;
+            return (
+                <ErrorView
+                    containerSx={{
+                        height: "100%",
+                    }}
+                />
+            );
+        }
+
+        if (
+            groupOptions.length > 0 &&
+            !queryConfig?.groupValue
+        ) {
+            return (
+                <EmptyView
+                    bordered
+                    description="No available group"
+                    containerSx={{
+                        height: "100%",
+                    }}
+                />
+            );
+        }
+
+        if (
+            !availableTypes.length ||
+            !queryConfig?.interactionType
+        ) {
+            return (
+                <EmptyView
+                    bordered
+                    description={
+                        "No available background interaction types"
+                    }
+                    containerSx={{
+                        height: "100%",
+                    }}
+                />
+            );
         }
 
         if (!hasCorrelationData(correlationData)) {
             return (
                 <EmptyView
                     bordered
-                    description="No log2FC correlation data"
-                    containerSx={{ height: "100%" }}
+                    description={
+                        "No log2FC correlation data"
+                    }
+                    containerSx={{
+                        height: "100%",
+                    }}
                 />
             );
         }
@@ -143,9 +193,15 @@ const Log2FCCorrelationAnalysisView = ({
                 titleSecondary={titleSecondary}
                 height="100%"
                 pointSize={visualConfig.pointSize}
-                pointOpacitySame={visualConfig.pointOpacitySame}
-                pointOpacityAnti={visualConfig.pointOpacityAnti}
-                highlightKeyword={searchKeyword.trim()}
+                pointOpacitySame={
+                    visualConfig.pointOpacitySame
+                }
+                pointOpacityAnti={
+                    visualConfig.pointOpacityAnti
+                }
+                highlightKeyword={
+                    searchKeyword.trim()
+                }
                 containerSx={{
                     minHeight: 0,
                 }}
@@ -196,12 +252,21 @@ const Log2FCCorrelationAnalysisView = ({
                             <Log2FCCorrelationControlPanel
                                 queryConfig={queryConfig}
                                 setQueryConfig={setQueryConfig}
-                                interactionTypeOptions={interactionTypeOptions}
+
+                                groupOptions={groupOptions}
+                                groupLabel={groupLabel}
+
+                                interactionTypeOptions={
+                                    interactionTypeOptions
+                                }
+
                                 visualConfig={visualConfig}
                                 setVisualConfig={setVisualConfig}
+
                                 searchKeyword={searchKeyword}
                                 setSearchKeyword={setSearchKeyword}
                                 searchOptions={searchOptions}
+
                                 onCollapse={() =>
                                     setIsControlPanelCollapsed(true)
                                 }

@@ -1,20 +1,107 @@
 "use client";
 
-import WorkflowVolcanoAnalysisSection
-    from "@/components/features/workspace/components/detail/common/Volcano/WorkflowVolcanoAnalysisSection";
+import { useMemo } from "react";
+
+import VolcanoAnalysisView
+    from "@/components/features/common/Volcano/VolcanoAnalysisView";
+import {
+    useVolcanoQueryConfig,
+} from "@/components/features/common/Volcano/useVolcanoQueryConfig";
+import {
+    getTaskData,
+    isTaskSuccess,
+} from "@/components/features/workspace/components/taskInformation/taskStatusUtils";
+import {
+    useHybridReferenceDegVolcano
+} from "@/components/features/workspace/hooks/Volcano/useHybridReferenceDegVolcano"
+
+
+const FALLBACK_DEG_RNA_TYPES = [
+    "mRNA",
+];
+
+const FALLBACK_DEG_SCOPES = [
+    "all",
+];
+
+const EMPTY_CUTOFFS = Object.freeze({});
+
 
 const HybridReferenceVolcanoAnalysisSection = ({
     task,
     height = 620,
 }) => {
+    const taskData = getTaskData(task);
+    const taskUUID = taskData?.uuid;
+    const isSuccess =
+        isTaskSuccess(taskData?.status);
+
+    const availableDegRnaTypes = useMemo(
+        () =>
+            taskData?.available_deg_rna_types?.length
+                ? taskData.available_deg_rna_types
+                : FALLBACK_DEG_RNA_TYPES,
+        [
+            taskData?.available_deg_rna_types,
+        ]
+    );
+
+    const availableDegScopes = useMemo(
+        () =>
+            taskData?.available_deg_scopes?.length
+                ? taskData.available_deg_scopes
+                : FALLBACK_DEG_SCOPES,
+        [
+            taskData?.available_deg_scopes,
+        ]
+    );
+
+    const {
+        queryConfig,
+        setQueryConfig,
+    } = useVolcanoQueryConfig({
+        availableDegRnaTypes,
+        availableDegScopes,
+    });
+
+    const {
+        volcanoData,
+        titlePrimary,
+        titleSecondary,
+        isLoading,
+        isError,
+    } = useHybridReferenceDegVolcano({
+        taskUUID: isSuccess ? taskUUID : null,
+        rnaType: queryConfig.rnaType,
+        degScope: queryConfig.degScope,
+    });
+
+
     return (
-        <WorkflowVolcanoAnalysisSection
-            task={task}
+        <VolcanoAnalysisView
             title="Expression Volcano Plot"
             height={height}
+            queryConfig={queryConfig}
+            setQueryConfig={setQueryConfig}
+            volcanoData={volcanoData}
+            titlePrimary={titlePrimary}
+            titleSecondary={titleSecondary}
+            isLoading={isLoading}
+            isError={isError}
+            availableDegRnaTypes={availableDegRnaTypes}
+            availableDegScopes={availableDegScopes}
+            cutoffsByRnaType={taskData?.cutoffs ?? EMPTY_CUTOFFS}
+            usePadj={task?.data?.use_padj}
             showDegScopeSelect
+            missingDescription={!taskUUID ? "Missing task UUID" : null}
+            unavailableDescription={
+                taskUUID && !isSuccess
+                    ? "Volcano plot is available only after the task succeeds."
+                    : null
+            }
         />
     );
 };
+
 
 export default HybridReferenceVolcanoAnalysisSection;

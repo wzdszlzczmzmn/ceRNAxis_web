@@ -12,6 +12,12 @@ import CustomListQueryNetworkResultWrapper
     from "@/components/features/workspace/components/detail/CustomListQuery/CustomListQueryNetworkResultWrapper"
 import { getWorkflowTaskResultDownloadURL } from "@/lib/api/analysis"
 import { triggerBrowserDownload } from "@/lib/api/utils/browserDownload"
+import CustomListQueryCMapResultSection
+    from "@/components/features/workspace/components/detail/CustomListQuery/CustomListQueryCMapResultSection"
+import CustomListQueryEnrichrSection
+    from "@/components/features/workspace/components/detail/CustomListQuery/CustomListQueryEnrichrSection"
+import CustomListQueryCMScoreSection
+    from "@/components/features/workspace/components/detail/CustomListQuery/CustomListQueryCMScoreSection"
 
 const CustomListQueryDetail = ({
     task,
@@ -62,6 +68,12 @@ const CustomListQueryDetail = ({
             <SubmittedRNAListCard task={task} />
 
             <CustomListQueryNetworkResultWrapper task={task} />
+
+            <CustomListQueryCMapResultSection task={task}/>
+
+            <CustomListQueryEnrichrSection task={task} height={680}/>
+
+            <CustomListQueryCMScoreSection task={task} height={680}/>
         </Stack>
     );
 };

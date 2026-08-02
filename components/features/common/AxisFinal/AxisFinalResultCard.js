@@ -6,11 +6,12 @@ import { Card } from "antd";
 import LoadingView from "@/components/common/status/LoadingView";
 import ErrorView from "@/components/common/status/ErrorView";
 import EmptyView from "@/components/common/status/EmptyView";
-import AxisFinalTable
-    from "@/components/features/common/AxisFinal/AxisFinalTable";
+import AxisFinalTable from "@/components/features/common/AxisFinal/AxisFinalTable";
+
 
 const AxisFinalResultCard = ({
     title = "ceRNA Axis Final Results",
+    titleExtra = null,
     count = 0,
     columns = [],
     results = [],
@@ -29,11 +30,16 @@ const AxisFinalResultCard = ({
                 <Box
                     component="span"
                     sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
                         fontSize: "24px",
                         fontWeight: 700,
                     }}
                 >
                     {title}
+
+                    {titleExtra}
                 </Box>
             }
             extra={
@@ -57,23 +63,27 @@ const AxisFinalResultCard = ({
                 <EmptyView
                     bordered
                     description={missingDescription}
-                    containerSx={{ height: "360px" }}
+                    containerSx={{ height: "760px" }}
                 />
             ) : unavailableDescription ? (
                 <EmptyView
                     bordered
                     description={unavailableDescription}
-                    containerSx={{ height: "360px" }}
+                    containerSx={{ height: "760px" }}
                 />
             ) : isLoading ? (
-                <LoadingView containerSx={{ height: "360px" }} />
+                <LoadingView
+                    containerSx={{ height: "760px" }}
+                />
             ) : isError ? (
-                <ErrorView containerSx={{ height: "360px" }} />
+                <ErrorView
+                    containerSx={{ height: "760px" }}
+                />
             ) : !results.length ? (
                 <EmptyView
                     bordered
                     description={emptyDescription}
-                    containerSx={{ height: "360px" }}
+                    containerSx={{ height: "760px" }}
                 />
             ) : (
                 <AxisFinalTable

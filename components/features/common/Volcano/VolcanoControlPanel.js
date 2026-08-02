@@ -26,6 +26,11 @@ const VolcanoControlPanel = ({
     rnaTypeOptions = [],
     degScopeOptions = [],
     showDegScopeSelect = false,
+    groupOptions = [],
+    groupValue = null,
+    groupLabel = "Group",
+    showGroupSelect = false,
+    onGroupChange,
     visualConfig,
     setVisualConfig,
     geneSearchOptions = [],
@@ -77,6 +82,24 @@ const VolcanoControlPanel = ({
             <Divider style={{ margin: "4px 0 8px" }} />
 
             <ControlGroup title="Data">
+                {showGroupSelect && (
+                    <ControlField
+                        label={groupLabel}
+                        tooltip={`Select a value from ${groupLabel}.`}
+                    >
+                        <Select
+                            showSearch
+                            size="middle"
+                            style={{ width: "100%" }}
+                            value={groupValue ?? undefined}
+                            options={groupOptions}
+                            placeholder={`Select ${groupLabel}`}
+                            optionFilterProp="label"
+                            onChange={onGroupChange}
+                        />
+                    </ControlField>
+                )}
+
                 <ControlField label="RNA type">
                     <Select
                         size="middle"

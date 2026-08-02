@@ -1,7 +1,6 @@
 "use client";
 
 import {
-    useEffect,
     useMemo,
     useState,
 } from "react";
@@ -12,6 +11,8 @@ import {
     Checkbox,
     Collapse,
     ConfigProvider,
+    InputNumber,
+    Radio,
     Tooltip,
     Typography,
 } from "antd";
@@ -20,41 +21,136 @@ import { DoubleLeftOutlined } from "@ant-design/icons";
 import FilterCancel from "@/components/icons/FilterCancel";
 
 
+const ALL_BOOLEAN_FILTER_VALUE = "__all__";
+
+const SINGLE_BOOLEAN_FILTER_FIELDS = new Set([
+    "has_axis_final",
+    "has_sponge",
+    "has_both_result_context",
+    "regulation_available",
+]);
+
+
+const isSingleBooleanFilter = field => {
+    if (
+        !SINGLE_BOOLEAN_FILTER_FIELDS.has(
+            field?.field_name
+        )
+    ) {
+        return false;
+    }
+
+    const options = Array.isArray(field?.options)
+        ? field.options
+        : [];
+
+    return (
+        options.length > 0
+        && options.every(option =>
+            typeof option?.value === "boolean"
+        )
+    );
+};
+
+
+const setFilterValue = ({
+    filters,
+    setFilters,
+    name,
+    value,
+}) => {
+    const nextFilters = {
+        ...(filters || {}),
+    };
+
+    const shouldDelete = (
+        value === null
+        || value === undefined
+        || value === ""
+        || (
+            Array.isArray(value)
+            && value.length === 0
+        )
+    );
+
+    if (shouldDelete) {
+        delete nextFilters[name];
+    } else {
+        nextFilters[name] = value;
+    }
+
+    setFilters(nextFilters);
+};
+
+
 const AxisRecurrentFilterCollapse = ({
     filters,
     setFilters,
     filterOptions,
     clearFilters,
 }) => {
-    const [activeKey, setActiveKey] = useState([]);
+    const [activeKey, setActiveKey] = useState([
+        "axis_type",
+        "source",
+        "has_axis_final",
+        "has_sponge",
+        "has_both_result_context",
+    ]);
 
-    const itemFields = useMemo(() => {
-        return (filterOptions?.fields || []).filter(
-            item => item?.field_type === "items"
-        );
+    const fields = useMemo(() => {
+        return Array.isArray(filterOptions?.fields)
+            ? filterOptions.fields
+            : [];
     }, [filterOptions]);
 
-    useEffect(() => {
-        setActiveKey(
-            itemFields.map(item => item.field_name)
-        );
-    }, [itemFields]);
-
     const collapseItems = useMemo(() => {
-        return itemFields.map(item => ({
-            key: item.field_name,
-            label: item.field_label,
-            children: (
-                <FilterItemsGroup
-                    name={item.field_name}
-                    options={item.options || []}
-                    selected={filters}
-                    setSelected={setFilters}
-                />
-            ),
-        }));
+        return fields.map(field => {
+            let children = null;
+
+            if (
+                field.field_type === "items"
+                && isSingleBooleanFilter(field)
+            ) {
+                children = (
+                    <FilterBooleanRadioGroup
+                        name={field.field_name}
+                        options={field.options || []}
+                        filters={filters}
+                        setFilters={setFilters}
+                    />
+                );
+            } else if (
+                field.field_type === "items"
+            ) {
+                children = (
+                    <FilterItemsGroup
+                        name={field.field_name}
+                        options={field.options || []}
+                        filters={filters}
+                        setFilters={setFilters}
+                    />
+                );
+            } else if (
+                field.field_type === "number"
+            ) {
+                children = (
+                    <FilterNumberInput
+                        name={field.field_name}
+                        minimum={field.minimum}
+                        filters={filters}
+                        setFilters={setFilters}
+                    />
+                );
+            }
+
+            return {
+                key: field.field_name,
+                label: field.field_label,
+                children,
+            };
+        });
     }, [
-        itemFields,
+        fields,
         filters,
         setFilters,
     ]);
@@ -99,18 +195,89 @@ const AxisRecurrentFilterCollapse = ({
 };
 
 
+const FilterBooleanRadioGroup = ({
+    name,
+    options,
+    filters,
+    setFilters,
+}) => {
+    const currentValue = filters?.[name];
+
+    const selectedValue = (
+        typeof currentValue === "boolean"
+    )
+        ? currentValue
+        : ALL_BOOLEAN_FILTER_VALUE;
+
+    const radioOptions = [
+        {
+            label: "Any",
+            value: ALL_BOOLEAN_FILTER_VALUE,
+        },
+        ...options.map(option => ({
+            label: option?.label ?? String(
+                option?.value
+            ),
+            value: option?.value,
+        })),
+    ];
+
+    const handleChange = event => {
+        const nextValue = event.target.value;
+
+        setFilterValue({
+            filters,
+            setFilters,
+            name,
+            value: (
+                nextValue === ALL_BOOLEAN_FILTER_VALUE
+                    ? undefined
+                    : nextValue
+            ),
+        });
+    };
+
+    return (
+        <Radio.Group
+            name={name}
+            value={selectedValue}
+            onChange={handleChange}
+        >
+            <Stack spacing={1}>
+                {radioOptions.map(option => (
+                    <Radio
+                        key={`${name}:${String(
+                            option.value
+                        )}`}
+                        value={option.value}
+                    >
+                        {option.label}
+                    </Radio>
+                ))}
+            </Stack>
+        </Radio.Group>
+    );
+};
+
+
 const FilterItemsGroup = ({
     name,
     options,
-    selected,
-    setSelected,
+    filters,
+    setFilters,
 }) => {
-    const selectedValues = selected?.[name] || [];
+    const selectedValues = Array.isArray(
+        filters?.[name]
+    )
+        ? filters[name]
+        : [];
 
     const handleChange = checkedValues => {
-        setSelected({
-            ...selected,
-            [name]: checkedValues,
+        setFilterValue({
+            filters,
+            setFilters,
+            name,
+            value: checkedValues,
         });
     };
 
@@ -130,8 +297,8 @@ const FilterItemsGroup = ({
             >
                 {options.map(option => {
                     const normalizedOption = (
-                        option &&
-                        typeof option === "object"
+                        option
+                        && typeof option === "object"
                     )
                         ? option
                         : {
@@ -141,13 +308,15 @@ const FilterItemsGroup = ({
 
                     return (
                         <Checkbox
-                            key={String(
+                            key={`${name}:${String(
                                 normalizedOption.value
-                            )}
+                            )}`}
                             value={normalizedOption.value}
                         >
                             <Tooltip
-                                title={normalizedOption.label}
+                                title={
+                                    normalizedOption.label
+                                }
                             >
                                 <Typography.Text
                                     ellipsis
@@ -155,7 +324,9 @@ const FilterItemsGroup = ({
                                         maxWidth: "200px",
                                     }}
                                 >
-                                    {normalizedOption.label}
+                                    {
+                                        normalizedOption.label
+                                    }
                                 </Typography.Text>
                             </Tooltip>
                         </Checkbox>
@@ -165,5 +336,49 @@ const FilterItemsGroup = ({
         </Checkbox.Group>
     );
 };
+
+
+const FilterNumberInput = ({
+    name,
+    minimum,
+    filters,
+    setFilters,
+}) => {
+    const value = filters?.[name] ?? null;
+
+    const handleChange = nextValue => {
+        setFilterValue({
+            filters,
+            setFilters,
+            name,
+            value: nextValue,
+        });
+    };
+
+    return (
+        <Stack spacing={1} sx={{ width: "250px" }}>
+            <InputNumber
+                value={value}
+                min={minimum ?? 0}
+                precision={0}
+                controls
+                placeholder={
+                    minimum !== undefined
+                        ? `Minimum: ${minimum}`
+                        : "Enter a value"
+                }
+                onChange={handleChange}
+                style={{
+                    width: "235px",
+                }}
+            />
+
+            <Typography.Text type="secondary">
+                Leave empty to disable this filter.
+            </Typography.Text>
+        </Stack>
+    );
+};
+
 
 export default AxisRecurrentFilterCollapse;

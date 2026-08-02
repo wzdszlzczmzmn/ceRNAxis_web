@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Card, Empty } from "antd";
-import { Stack } from "@mui/system";
+import { Box, Stack } from "@mui/system";
 import { ReloadOutlined } from "@ant-design/icons";
 
 import LoadingView from "@/components/common/status/LoadingView";
@@ -9,8 +9,27 @@ import ErrorView from "@/components/common/status/ErrorView";
 import NetworkGraph
     from "@/components/features/workspace/components/detail/CustomListQuery/NetworkGraph";
 
+const NETWORK_CONTAINER_STYLE = {
+    width: "100%",
+    height: "75vh",
+    minHeight: 720
+};
+
+const NetworkContentContainer = ({
+    children,
+}) => {
+    return (
+        <Box
+            sx={NETWORK_CONTAINER_STYLE}
+        >
+            {children}
+        </Box>
+    );
+};
+
 const NetworkResultCard = ({
     title = "ceRNA Network",
+    titleExtra,
     networkData,
     isLoading,
     isError,
@@ -21,26 +40,44 @@ const NetworkResultCard = ({
     isAvailable = true,
     height = 520,
 }) => {
+    const renderCardTitle = () => (
+        <Stack
+            direction="row"
+            spacing={2}
+            alignItems="center"
+        >
+            <span>{title}</span>
+
+            {titleExtra}
+        </Stack>
+    );
+
     if (missingDescription) {
         return (
-            <Card title={title}>
-                <Empty description={missingDescription} />
+            <Card title={renderCardTitle()}>
+                <NetworkContentContainer>
+                    <Empty description={missingDescription}/>
+                </NetworkContentContainer>
             </Card>
         );
     }
 
     if (!isAvailable) {
         return (
-            <Card title={title}>
-                <Empty description={unavailableDescription} />
+            <Card title={renderCardTitle()}>
+                <NetworkContentContainer>
+                    <Empty description={unavailableDescription}/>
+                </NetworkContentContainer>
             </Card>
         );
     }
 
     if (isLoading) {
         return (
-            <Card title={title}>
-                <LoadingView containerSx={{ height: `${height}px` }} />
+            <Card title={renderCardTitle()}>
+                <NetworkContentContainer>
+                    <LoadingView containerSx={{ height: `${height}px` }}/>
+                </NetworkContentContainer>
             </Card>
         );
     }
@@ -48,35 +85,39 @@ const NetworkResultCard = ({
     if (isError) {
         return (
             <Card
-                title={title}
+                title={renderCardTitle()}
                 extra={
                     <Button
-                        icon={<ReloadOutlined />}
+                        icon={<ReloadOutlined/>}
                         onClick={() => onRefresh?.()}
                     >
                         Retry
                     </Button>
                 }
             >
-                <ErrorView containerSx={{ height: `${height}px` }} />
+                <NetworkContentContainer>
+                    <ErrorView containerSx={{ height: `${height}px` }}/>
+                </NetworkContentContainer>
             </Card>
         );
     }
 
     if (!networkData) {
         return (
-            <Card title={title}>
-                <Empty description={emptyDescription} />
+            <Card title={renderCardTitle()}>
+                <NetworkContentContainer>
+                    <Empty description={emptyDescription}/>
+                </NetworkContentContainer>
             </Card>
         );
     }
 
     return (
         <Card
-            title={title}
+            title={renderCardTitle()}
             extra={
                 <Button
-                    icon={<ReloadOutlined />}
+                    icon={<ReloadOutlined/>}
                     onClick={() => onRefresh?.()}
                 >
                     Refresh
@@ -89,7 +130,7 @@ const NetworkResultCard = ({
             }}
         >
             <Stack spacing={2}>
-                <NetworkGraph networkData={networkData} />
+                <NetworkGraph key={networkData?.group_value} networkData={networkData}/>
             </Stack>
         </Card>
     );

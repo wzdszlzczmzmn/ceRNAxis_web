@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { Empty, Popover, Table } from "antd";
+import { Button, Empty, Popover, Table, Tooltip } from "antd";
 
 import BasicChip from "@/components/ui/chips/BasicChip";
 import EllipsisText from "@/components/common/text/EllipsisText";
+import { SearchOutlined } from "@ant-design/icons"
+import Link from "next/link"
 
 const isEmptyValue = (value) => {
     return value === null || value === undefined || String(value).trim() === "";
@@ -258,6 +260,154 @@ const RemainingProjectMatches = ({
                 justifyContent="flex-start"
             />
         </div>
+    );
+};
+
+const hasMatchedProject = record => {
+    const matches = Array.isArray(
+        record?.dataset_project_matches
+    )
+        ? record.dataset_project_matches
+        : [];
+
+    const reportedMatchCount = Number(
+        record?.dataset_project_match_count ??
+        matches.length
+    );
+
+    return (
+        Number.isFinite(reportedMatchCount)
+            ? reportedMatchCount > 0
+            : matches.length > 0
+    );
+};
+
+
+const getRecurrentAxisSearchPattern = record => {
+    if (!record) {
+        return null;
+    }
+
+    /*
+     * Recurrent ceRNA search pattern:
+     * miRNA|mRNA|lncRNA|circRNA
+     *
+     * Empty values must remain empty segments.
+     */
+    const patternParts = [
+        record.miRNA,
+        record.mRNA,
+        record.lncRNA,
+        record.circRNA,
+    ].map(value => String(value ?? "").trim());
+
+    const hasRequiredAxisFields = (
+        patternParts[0] &&
+        patternParts[1] &&
+        (
+            patternParts[2] ||
+            patternParts[3]
+        )
+    );
+
+    if (!hasRequiredAxisFields) {
+        return null;
+    }
+
+    return patternParts.join("|");
+};
+
+
+const getRecurrentAxisSearchURL = record => {
+    const pattern = getRecurrentAxisSearchPattern(record);
+
+    if (!pattern) {
+        return null;
+    }
+
+    const params = new URLSearchParams({
+        search: pattern,
+    });
+
+    return (
+        `/database/recurrentceRNA?${params.toString()}`
+    );
+};
+
+const renderRecurrentAxisAction = (_, record) => {
+    const matched = hasMatchedProject(record);
+    const url = getRecurrentAxisSearchURL(record);
+
+    if (!matched) {
+        return (
+            <Tooltip
+                title={
+                    "This axis has no matched project, " +
+                    "so no recurrent ceRNA record is available."
+                }
+            >
+                {/*
+                 * Disabled Button cannot trigger Tooltip directly,
+                 * so it must be wrapped by an element.
+                 */}
+                <span
+                    style={{
+                        display: "inline-flex",
+                    }}
+                >
+                    <Button
+                        type="primary"
+                        icon={<SearchOutlined />}
+                        disabled
+                    >
+                        Recurrent
+                    </Button>
+                </span>
+            </Tooltip>
+        );
+    }
+
+    if (!url) {
+        return (
+            <Tooltip
+                title={
+                    "The RNA fields required to build the " +
+                    "recurrent ceRNA search pattern are incomplete."
+                }
+            >
+                <span
+                    style={{
+                        display: "inline-flex",
+                    }}
+                >
+                    <Button
+                        type="primary"
+                        icon={<SearchOutlined />}
+                        disabled
+                    >
+                        Recurrent
+                    </Button>
+                </span>
+            </Tooltip>
+        );
+    }
+
+    return (
+        <Link
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={event => {
+                event.stopPropagation();
+            }}
+        >
+            <Button
+                type="primary"
+                icon={<SearchOutlined />}
+            >
+                Recurrent
+            </Button>
+        </Link>
     );
 };
 
@@ -604,6 +754,14 @@ const AxisFinalTable = ({
                     );
                 },
                 render: renderProjectMatchChips,
+            },
+            {
+                title: "Action",
+                key: "recurrent_axis_action",
+                width: 140,
+                align: "center",
+                fixed: "right",
+                render: renderRecurrentAxisAction,
             },
         ];
     }, [

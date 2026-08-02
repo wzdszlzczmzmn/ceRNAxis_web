@@ -40,6 +40,11 @@ const RANKING_METHOD_OPTIONS = [
 ];
 
 const DEGPathwayControlPanel = ({
+    groupOptions = [],
+    groupValue = null,
+    groupLabel = "Group",
+    onGroupChange,
+
     visualConfig,
     setVisualConfig,
     pathwaySearchOptions = [],
@@ -86,6 +91,18 @@ const DEGPathwayControlPanel = ({
             <Divider style={{ margin: "4px 0 8px" }} />
 
             <ControlGroup title="Data">
+                {groupOptions.length > 0 && (
+                    <ControlField label={groupLabel}>
+                        <Select
+                            value={groupValue ?? undefined}
+                            placeholder="Select group"
+                            options={groupOptions}
+                            style={{ width: "100%" }}
+                            onChange={onGroupChange}
+                        />
+                    </ControlField>
+                )}
+
                 <ControlField
                     label="Ranking method"
                     tooltip="Controls how pathways are ranked before displaying Top N or all pathways."

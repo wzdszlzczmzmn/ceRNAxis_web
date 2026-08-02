@@ -8,11 +8,14 @@ import CustomListQueryDetail from "@/components/features/workspace/components/de
 import PairedCohortDetail from "@/components/features/workspace/components/detail/PairedCohort/PairedCohortDetail"
 import HybridReferenceDetail
     from "@/components/features/workspace/components/detail/HybridReference/HybridReferenceDetail"
+import SCSTHybridReferenceDetail
+    from "@/components/features/workspace/components/detail/SCSTHybridReference/SCSTHybridReferenceDetail"
 
 const TASK_DETAIL_COMPONENT_MAP = {
     CustomListQueryTask: CustomListQueryDetail,
     PairedCohortTask: PairedCohortDetail,
-    HybridReferenceTask: HybridReferenceDetail
+    HybridReferenceTask: HybridReferenceDetail,
+    SCSTHybridReferenceTask: SCSTHybridReferenceDetail,
 };
 
 const TaskDetail = () => {

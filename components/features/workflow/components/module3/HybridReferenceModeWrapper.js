@@ -10,7 +10,7 @@ import {
     Form,
     Input,
     InputNumber,
-    Row,
+    Row, Segmented,
     Select,
     Space,
     Spin,
@@ -38,7 +38,7 @@ import ErrorView from "@/components/common/status/ErrorView";
 import EmptyView from "@/components/common/status/EmptyView";
 import {
     getHybridReferenceRunDemoURL,
-    getHybridReferenceSubmitTaskURL,
+    getHybridReferenceSubmitTaskURL, getSCSTHybridReferenceSubmitTaskURL,
 } from "@/lib/api/analysis";
 
 const { Dragger } = Upload;
@@ -101,11 +101,61 @@ const USE_PADJ_OPTIONS = [
     },
 ];
 
+
+const DATA_MODE_CONFIG = {
+    bulk: {
+        label: "Bulk RNA-seq",
+        identifierColumn: "sample_id",
+        expressionFileLabel: "mRNA expression matrix",
+        metaFileLabel: "Sample meta file",
+        defaultGroupColumn: "c_group",
+        expressionAccept: ".csv,text/csv",
+        metadataAccept: ".csv,text/csv",
+        expressionHint: "Supported: CSV",
+        metadataHint:
+            "Supported: CSV, Required columns: sample_id, c_group",
+    },
+
+    sc: {
+        label: "Single-cell",
+        identifierColumn: "cell_id",
+        expressionFileLabel: "Single-cell expression matrix",
+        metaFileLabel: "Cell meta file",
+        defaultGroupColumn: "Celltype (malignancy)",
+        expressionAccept:
+            ".parquet,application/vnd.apache.parquet,application/octet-stream",
+        metadataAccept: ".csv,text/csv",
+        expressionHint:
+            "Supported: Parquet (.parquet), First column: cell_id",
+        metadataHint:
+            "Supported: CSV, First column: cell_id, and must contain the selected group column",
+    },
+
+    st: {
+        label: "Spatial Transcriptomics",
+        identifierColumn: "spot_id",
+        expressionFileLabel: "Spatial expression matrix",
+        metaFileLabel: "Spot meta file",
+        defaultGroupColumn: "Celltype (malignancy)",
+        expressionAccept:
+            ".parquet,application/vnd.apache.parquet,application/octet-stream",
+        metadataAccept: ".csv,text/csv",
+        expressionHint:
+            "Supported: Parquet (.parquet), First column: spot_id",
+        metadataHint:
+            "Supported: CSV, First column: spot_id, and must contain the selected group column",
+    },
+};
+
 const initialWorkflowParams = {
+    dataMode: "bulk",
+
     taskName: "",
     tcgaType: undefined,
     lncrnaType: "log2tpm",
     mapInfo: undefined,
+
+    groupCol: "c_group",
 
     degMethod: "limma",
     usePadj: false,
@@ -115,15 +165,19 @@ const initialWorkflowParams = {
 };
 
 const initialFileState = {
-    mrnaFile: null,
+    expressionFile: null,
     metaFile: null,
 };
 
 const demoWorkflowParams = {
+    dataMode: "bulk",
+
     taskName: "demo_task_module3",
     tcgaType: "TCGA_ACC",
     lncrnaType: "log2tpm",
     mapInfo: "ImmiRImmiR_ACC",
+
+    groupCol: "c_group",
 
     degMethod: "limma",
     usePadj: true,
@@ -132,26 +186,42 @@ const demoWorkflowParams = {
     padjCutoffMrna: 0.05,
 };
 
-const acceptedFileTypes = ".csv";
-
 const makeSingleFileUploadProps = ({
     file,
     onChange,
     disabled,
+    accept,
 }) => ({
     multiple: false,
     maxCount: 1,
-    accept: acceptedFileTypes,
+    accept,
     disabled,
     fileList: file ? [file] : [],
     beforeUpload: () => false,
+
     onChange: ({ fileList }) => {
         onChange(fileList?.[0] || null);
     },
+
     onRemove: () => {
         onChange(null);
     },
 });
+
+const getRawFile = uploadFile => {
+    return uploadFile?.originFileObj || uploadFile || null;
+};
+
+const getFileExtension = fileName => {
+    const normalizedName = String(fileName || "").trim().toLowerCase();
+    const lastDotIndex = normalizedName.lastIndexOf(".");
+
+    if (lastDotIndex < 0) {
+        return "";
+    }
+
+    return normalizedName.slice(lastDotIndex);
+};
 
 const getTaskUUIDFromResponse = (response) => {
     return (
@@ -177,6 +247,16 @@ const HybridReferenceModeWrapper = () => {
 
     const [workflowParams, setWorkflowParams] = useState(initialWorkflowParams);
     const [files, setFiles] = useState(initialFileState);
+
+    const dataMode = workflowParams.dataMode;
+
+    const modeConfig = (
+        DATA_MODE_CONFIG[dataMode] ||
+        DATA_MODE_CONFIG.bulk
+    );
+
+    const isBulkMode = dataMode === "bulk";
+    const isSCSTMode = dataMode === "sc" || dataMode === "st";
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isModalOpen, setIsModelOpen] = useState(false);
@@ -205,8 +285,33 @@ const HybridReferenceModeWrapper = () => {
         }));
     };
 
+    const handleDataModeChange = nextMode => {
+        const nextConfig = (
+            DATA_MODE_CONFIG[nextMode] ||
+            DATA_MODE_CONFIG.bulk
+        );
+
+        setWorkflowParams(prev => ({
+            ...prev,
+            dataMode: nextMode,
+            groupCol: nextConfig.defaultGroupColumn,
+        }));
+
+        form.setFieldsValue({
+            dataMode: nextMode,
+            groupCol: nextConfig.defaultGroupColumn,
+        });
+
+        /*
+         * 不同模式要求不同的标识列。
+         * 切换模式时清除已选择文件，避免误用旧文件。
+         */
+        setFiles(initialFileState);
+    };
+
     const handleLoadDemoInput = () => {
         setWorkflowParams(demoWorkflowParams);
+        setFiles(initialFileState);
         form.setFieldsValue(demoWorkflowParams);
     };
 
@@ -247,13 +352,56 @@ const HybridReferenceModeWrapper = () => {
             return false;
         }
 
-        if (!files.mrnaFile) {
-            messageApi.error("mRNA expression file is required.");
+        if (!files.expressionFile) {
+            messageApi.error(
+                isBulkMode
+                    ? "mRNA expression file is required."
+                    : `${modeConfig.label} expression file is required.`
+            );
             return false;
         }
 
         if (!files.metaFile) {
-            messageApi.error("Sample meta file is required.");
+            messageApi.error(
+                `${modeConfig.metaFileLabel} is required.`
+            );
+            return false;
+        }
+
+        const expressionRawFile = getRawFile(files.expressionFile);
+        const metadataRawFile = getRawFile(files.metaFile);
+
+        if (!expressionRawFile || !metadataRawFile) {
+            messageApi.error("Invalid uploaded file.");
+            return false;
+        }
+
+        const expressionExtension = getFileExtension(
+            expressionRawFile.name
+        );
+
+        const metadataExtension = getFileExtension(
+            metadataRawFile.name
+        );
+
+        if (isBulkMode && expressionExtension !== ".csv") {
+            messageApi.error(
+                "Bulk RNA-seq expression file must be a CSV (.csv) file."
+            );
+            return false;
+        }
+
+        if (isSCSTMode && expressionExtension !== ".parquet") {
+            messageApi.error(
+                `${modeConfig.label} expression file must be a Parquet (.parquet) file.`
+            );
+            return false;
+        }
+
+        if (metadataExtension !== ".csv") {
+            messageApi.error(
+                "Metadata file must be a CSV (.csv) file."
+            );
             return false;
         }
 
@@ -262,31 +410,138 @@ const HybridReferenceModeWrapper = () => {
             return false;
         }
 
+        if (workflowParams.logfcCutoffMrna == null) {
+            messageApi.error("mRNA log2FC cutoff is required.");
+            return false;
+        }
+
+        if (Number(workflowParams.logfcCutoffMrna) < 0) {
+            messageApi.error(
+                "mRNA log2FC cutoff must be greater than or equal to 0."
+            );
+            return false;
+        }
+
+        if (workflowParams.padjCutoffMrna == null) {
+            messageApi.error("mRNA p-value cutoff is required.");
+            return false;
+        }
+
+        const padjCutoff = Number(
+            workflowParams.padjCutoffMrna
+        );
+
+        if (padjCutoff <= 0 || padjCutoff > 1) {
+            messageApi.error(
+                "mRNA p-value cutoff must be in the range (0, 1]."
+            );
+            return false;
+        }
+
+        if (isSCSTMode) {
+            const groupCol = workflowParams.groupCol?.trim();
+
+            if (!groupCol) {
+                messageApi.error(
+                    "Metadata group column is required."
+                );
+                return false;
+            }
+
+            if (groupCol.length > 128) {
+                messageApi.error(
+                    "Metadata group column must be no more than 128 characters."
+                );
+                return false;
+            }
+
+            if (groupCol === modeConfig.identifierColumn) {
+                messageApi.error(
+                    `Metadata group column cannot be '${modeConfig.identifierColumn}'.`
+                );
+                return false;
+            }
+        }
+
         return true;
     };
 
     const buildSubmitFormData = () => {
         const formData = new FormData();
 
-        formData.append("task_name", workflowParams.taskName.trim());
-        formData.append("tcga_type", workflowParams.tcgaType);
-        formData.append("lncrna_type", workflowParams.lncrnaType);
-        formData.append("map_info", workflowParams.mapInfo);
+        const expressionRawFile = getRawFile(
+            files.expressionFile
+        );
+        const metadataRawFile = getRawFile(
+            files.metaFile
+        );
 
-        formData.append("mrna_file", files.mrnaFile.originFileObj);
-        formData.append("meta_file", files.metaFile.originFileObj);
+        formData.append(
+            "task_name",
+            workflowParams.taskName.trim()
+        );
 
-        formData.append("deg_method", workflowParams.degMethod);
-        formData.append("use_padj", String(workflowParams.usePadj));
+        formData.append(
+            "tcga_type",
+            workflowParams.tcgaType
+        );
+
+        formData.append(
+            "lncrna_type",
+            workflowParams.lncrnaType
+        );
+
+        formData.append(
+            "map_info",
+            workflowParams.mapInfo
+        );
+
+        formData.append(
+            "use_padj",
+            String(workflowParams.usePadj)
+        );
 
         formData.append(
             "logfc_cutoff_mrna",
             String(workflowParams.logfcCutoffMrna)
         );
+
         formData.append(
             "padj_cutoff_mrna",
             String(workflowParams.padjCutoffMrna)
         );
+
+        formData.append(
+            "meta_file",
+            metadataRawFile
+        );
+
+        if (isBulkMode) {
+            formData.append(
+                "mrna_file",
+                expressionRawFile
+            );
+
+            formData.append(
+                "deg_method",
+                workflowParams.degMethod
+            );
+        } else {
+            formData.append(
+                "data_type",
+                dataMode
+            );
+
+            formData.append(
+                "group_col",
+                workflowParams.groupCol.trim()
+            );
+
+            formData.append(
+                "exp_file",
+                expressionRawFile
+            );
+        }
 
         return formData;
     };
@@ -334,30 +589,44 @@ const HybridReferenceModeWrapper = () => {
 
             const formData = buildSubmitFormData();
 
+            const submitURL = isBulkMode
+                ? getHybridReferenceSubmitTaskURL()
+                : getSCSTHybridReferenceSubmitTaskURL();
+
             const response = await api.post(
-                getHybridReferenceSubmitTaskURL(),
+                submitURL,
                 formData,
                 {
                     timeout: 600000,
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
                 }
             );
 
             const uuid = getTaskUUIDFromResponse(response);
 
+            if (!uuid) {
+                throw new Error(
+                    "Task submitted, but no task UUID was returned."
+                );
+            }
+
             setTaskUUID(uuid);
             setSubmissionStatus(true);
             setIsModelOpen(true);
-            messageApi.success("Submit Success!");
+
+            messageApi.success(
+                `${modeConfig.label} task submitted successfully.`
+            );
         } catch (err) {
             setTaskUUID("");
             setSubmissionStatus(false);
             setIsModelOpen(true);
 
-            const message = getErrorMessage(err, "Submit Fail!");
-            messageApi.error(message);
+            const errorMessage = getErrorMessage(
+                err,
+                `${modeConfig.label} task submission failed.`
+            );
+
+            messageApi.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -366,7 +635,10 @@ const HybridReferenceModeWrapper = () => {
     const handleReset = () => {
         setWorkflowParams(initialWorkflowParams);
         setFiles(initialFileState);
+
         form.resetFields();
+
+        form.setFieldsValue(initialWorkflowParams);
     };
 
     if (isImmuneMapLoading) {
@@ -395,34 +667,86 @@ const HybridReferenceModeWrapper = () => {
         >
             <Stack spacing={4}>
                 <Stack spacing={2}>
-                    <Stack
-                        direction="row"
-                        spacing={2}
-                        alignItems="center"
-                    >
-                        <Box
-                            component="h6"
-                            sx={{
-                                fontSize: "40px",
-                                m: 0,
+                    <Stack spacing={2}>
+                        <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                        >
+                            <Box
+                                component="h6"
+                                sx={{
+                                    fontSize: "40px",
+                                    m: 0,
+                                }}
+                            >
+                                Hybrid Reference Mode
+                            </Box>
+
+                            <BasicChip
+                                value="Mode 3"
+                                color="blue"
+                                style={{
+                                    height: "32px",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    padding: "0 12px",
+                                    fontSize: "14px",
+                                    fontWeight: 600,
+                                    marginTop: "10px",
+                                }}
+                            />
+                        </Stack>
+
+                        <Stack
+                            direction={{
+                                xs: "column",
+                                md: "row",
+                            }}
+                            spacing={1.5}
+                            alignItems={{
+                                xs: "stretch",
+                                md: "center",
                             }}
                         >
-                            Hybrid Reference Mode
-                        </Box>
+                            <Box
+                                component="span"
+                                sx={{
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    color: "text.secondary",
+                                    minWidth: "132px",
+                                }}
+                            >
+                                Input Data Mode:
+                            </Box>
 
-                        <BasicChip
-                            value="Mode 3"
-                            color="blue"
-                            style={{
-                                height: "32px",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                padding: "0 12px",
-                                fontSize: "14px",
-                                fontWeight: 600,
-                                marginTop: "10px",
-                            }}
-                        />
+                            <Segmented
+                                block
+                                className="hybrid-data-mode-segmented"
+                                value={workflowParams.dataMode}
+                                options={[
+                                    {
+                                        label: "Bulk RNA-seq",
+                                        value: "bulk",
+                                    },
+                                    {
+                                        label: "Single-cell",
+                                        value: "sc",
+                                    },
+                                    {
+                                        label: "Spatial Transcriptomics",
+                                        value: "st",
+                                    },
+                                ]}
+                                onChange={handleDataModeChange}
+                                disabled={isSubmitting}
+                                style={{
+                                    width: "100%",
+                                    maxWidth: 620,
+                                }}
+                            />
+                        </Stack>
                     </Stack>
 
                     <Divider/>
@@ -441,7 +765,7 @@ const HybridReferenceModeWrapper = () => {
                             danger
                             icon={<FileSearchOutlined/>}
                             disabled={isSubmitting}
-                            href="/workspace/detail?taskId=3198c38c-6a01-412c-b12c-0610ee1a06b0"
+                            href="/workspace/detail?taskId=d3498b29-bd4b-40fd-ba4b-afe8adbc2d1e"
                             target="_blank"
                         >
                             View Demo Result
@@ -496,33 +820,77 @@ const HybridReferenceModeWrapper = () => {
                         </Box>
                     }
                     description={
-                        <Box component="span" sx={{ fontSize: "14px" }}>
-                            Hybrid Reference Mode uses an uploaded <b>mRNA expression matrix</b>,
-                            an uploaded <b>sample meta file</b>, and a selected TCGA reference
-                            cancer type to construct ceRNA-related results. The backend will use
-                            fixed columns:
+                        <Box
+                            component="span"
+                            sx={{ fontSize: "14px" }}
+                        >
+                            Hybrid Reference Mode uses an uploaded{" "}
+                            <b>mRNA expression matrix</b>, an uploaded{" "}
+                            <b>{modeConfig.metaFileLabel.toLowerCase()}</b>, and
+                            a selected TCGA reference cancer type to construct
+                            ceRNA-related results.
+
                             <Box component="ul" sx={{ mb: 0 }}>
                                 <li>
-                                    Expression sample column: <b>sample_id</b>
+                                    Data mode:{" "}
+                                    <b>{modeConfig.label}</b>
                                 </li>
+
                                 <li>
-                                    Meta sample column: <b>sample_id</b>
+                                    Expression file format:{" "}
+                                    <b>
+                                        {isBulkMode
+                                            ? "CSV"
+                                            : "Parquet (.parquet)"}
+                                    </b>
                                 </li>
+
                                 <li>
-                                    Meta group column: <b>c_group</b>
+                                    Expression identifier column:{" "}
+                                    <b>{modeConfig.identifierColumn}</b>
                                 </li>
+
                                 <li>
-                                    Case label: <b>case</b>
+                                    Metadata file format: <b>CSV</b>
                                 </li>
+
                                 <li>
-                                    Control label: <b>control</b>
+                                    Metadata identifier column:{" "}
+                                    <b>{modeConfig.identifierColumn}</b>
                                 </li>
+
+                                {isBulkMode ? (
+                                    <>
+                                        <li>
+                                            Metadata group column: <b>c_group</b>
+                                        </li>
+
+                                        <li>
+                                            Case label: <b>case</b>
+                                        </li>
+
+                                        <li>
+                                            Control label: <b>control</b>
+                                        </li>
+                                    </>
+                                ) : (
+                                    <li>
+                                        Metadata group column:{" "}
+                                        <b>
+                                            {workflowParams.groupCol ||
+                                                modeConfig.defaultGroupColumn}
+                                        </b>
+                                    </li>
+                                )}
+
                                 <li>
-                                    Cancer type: used to filter matching cancer-relevant cell lines.
+                                    Cancer type: used as the TCGA reference.
                                 </li>
+
                                 <li>
-                                    use_padj: if <b>TRUE</b>, adjusted p-value is used for DEG filtering;
-                                    if <b>FALSE</b>, raw p-value is used.
+                                    use_padj: if <b>TRUE</b>, adjusted p-value
+                                    is used for DEG filtering; if <b>FALSE</b>,
+                                    raw p-value is used.
                                 </li>
                             </Box>
                         </Box>
@@ -722,6 +1090,73 @@ const HybridReferenceModeWrapper = () => {
                             </Col>
                         </Row>
 
+                        {
+                            isSCSTMode && (
+                                <Row gutter={[20, 16]}>
+                                    <Col xs={24} md={12}>
+                                        <Space
+                                            direction="vertical"
+                                            size={6}
+                                            style={{
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <Text strong>
+                        <span
+                            style={{
+                                color: "#ff4d4f",
+                            }}
+                        >
+                            *{" "}
+                        </span>
+                                                Metadata Group Column
+                                            </Text>
+
+                                            <Form.Item
+                                                name="groupCol"
+                                                style={{
+                                                    marginBottom: 0,
+                                                }}
+                                                rules={[
+                                                    {
+                                                        required: true,
+                                                        whitespace: true,
+                                                        message: (
+                                                            "Please input the metadata " +
+                                                            "group column."
+                                                        ),
+                                                    },
+                                                    {
+                                                        max: 128,
+                                                        message: (
+                                                            "Group column must be no more " +
+                                                            "than 128 characters."
+                                                        ),
+                                                    },
+                                                ]}
+                                            >
+                                                <Input
+                                                    value={workflowParams.groupCol}
+                                                    disabled={isSubmitting}
+                                                    allowClear
+                                                    maxLength={128}
+                                                    placeholder={
+                                                        "e.g. Celltype (malignancy), " +
+                                                        "malignancy or cell_type"
+                                                    }
+                                                    onChange={event => {
+                                                        updateWorkflowParams({
+                                                            groupCol: event.target.value,
+                                                        });
+                                                    }}
+                                                />
+                                            </Form.Item>
+                                        </Space>
+                                    </Col>
+                                </Row>
+                            )
+                        }
+
                         <Stack
                             direction={{
                                 xs: "column",
@@ -731,25 +1166,31 @@ const HybridReferenceModeWrapper = () => {
                         >
                             <Box sx={{ flex: 1 }}>
                                 <Form.Item
-                                    label="mRNA expression matrix"
+                                    label={modeConfig.expressionFileLabel}
                                     required
                                 >
                                     <Dragger
                                         {...makeSingleFileUploadProps({
-                                            file: files.mrnaFile,
+                                            file: files.expressionFile,
                                             disabled: isSubmitting,
-                                            onChange: (file) =>
-                                                updateFile("mrnaFile", file),
+                                            accept: modeConfig.expressionAccept,
+                                            onChange: file =>
+                                                updateFile(
+                                                    "expressionFile",
+                                                    file
+                                                ),
                                         })}
                                     >
                                         <p className="ant-upload-drag-icon">
-                                            <InboxOutlined/>
+                                            <InboxOutlined />
                                         </p>
+
                                         <p className="ant-upload-text">
-                                            Click or drag mRNA file to upload
+                                            Click or drag expression file to upload
                                         </p>
+
                                         <p className="ant-upload-hint">
-                                            Supported: CSV
+                                            {modeConfig.expressionHint}
                                         </p>
                                     </Dragger>
                                 </Form.Item>
@@ -757,26 +1198,37 @@ const HybridReferenceModeWrapper = () => {
 
                             <Box sx={{ flex: 1 }}>
                                 <Form.Item
-                                    label="Sample meta file"
+                                    label={modeConfig.metaFileLabel}
                                     required
                                 >
                                     <Dragger
                                         {...makeSingleFileUploadProps({
                                             file: files.metaFile,
                                             disabled: isSubmitting,
-                                            onChange: (file) =>
+                                            accept: modeConfig.metadataAccept,
+                                            onChange: file =>
                                                 updateFile("metaFile", file),
                                         })}
                                     >
                                         <p className="ant-upload-drag-icon">
-                                            <InboxOutlined/>
+                                            <InboxOutlined />
                                         </p>
+
                                         <p className="ant-upload-text">
-                                            Click or drag meta file to upload
+                                            Click or drag metadata file to upload
                                         </p>
+
                                         <p className="ant-upload-hint">
-                                            Supported: CSV, Required columns:
-                                            sample_id, c_group
+                                            {isBulkMode
+                                                ? modeConfig.metadataHint
+                                                : (
+                                                    `Supported: CSV, First column: ` +
+                                                    `${modeConfig.identifierColumn}, ` +
+                                                    `Required group column: ` +
+                                                    `${workflowParams.groupCol ||
+                                                    modeConfig.defaultGroupColumn}`
+                                                )
+                                            }
                                         </p>
                                     </Dragger>
                                 </Form.Item>
@@ -791,31 +1243,33 @@ const HybridReferenceModeWrapper = () => {
                                     label: "Advanced settings",
                                     children: (
                                         <Stack spacing={3}>
-                                            <Form.Item
-                                                label="DEG method"
-                                                name="degMethod"
-                                                required
-                                            >
-                                                <Select
-                                                    disabled={isSubmitting}
-                                                    value={workflowParams.degMethod}
-                                                    onChange={(value) =>
-                                                        updateWorkflowParams({
-                                                            degMethod: value,
-                                                        })
-                                                    }
-                                                    options={[
-                                                        {
-                                                            label: "limma",
-                                                            value: "limma",
-                                                        },
-                                                        {
-                                                            label: "deseq2",
-                                                            value: "deseq2",
-                                                        },
-                                                    ]}
-                                                />
-                                            </Form.Item>
+                                            {isBulkMode && (
+                                                <Form.Item
+                                                    label="DEG method"
+                                                    name="degMethod"
+                                                    required
+                                                >
+                                                    <Select
+                                                        disabled={isSubmitting}
+                                                        value={workflowParams.degMethod}
+                                                        onChange={value =>
+                                                            updateWorkflowParams({
+                                                                degMethod: value,
+                                                            })
+                                                        }
+                                                        options={[
+                                                            {
+                                                                label: "limma",
+                                                                value: "limma",
+                                                            },
+                                                            {
+                                                                label: "deseq2",
+                                                                value: "deseq2",
+                                                            },
+                                                        ]}
+                                                    />
+                                                </Form.Item>
+                                            )}
 
                                             <Form.Item
                                                 label="Use adjusted p-value"

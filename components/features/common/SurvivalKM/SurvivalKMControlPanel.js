@@ -3,7 +3,7 @@
 import {
     Button,
     Divider,
-    InputNumber,
+    InputNumber, Select,
     Switch,
 } from "antd";
 import { Box, Stack } from "@mui/system";
@@ -28,6 +28,11 @@ const formatPValue = value => {
 };
 
 const SurvivalKMControlPanel = ({
+    groupOptions = [],
+    groupValue = null,
+    groupLabel = "Group",
+    onGroupChange,
+
     visualConfig,
     setVisualConfig,
     summary,
@@ -72,6 +77,21 @@ const SurvivalKMControlPanel = ({
             </Stack>
 
             <Divider style={{ margin: "4px 0 8px" }} />
+
+            {groupOptions.length > 0 && (
+                <ControlGroup title="Data">
+                    <ControlField label={groupLabel}>
+                        <Select
+                            size="middle"
+                            style={{ width: "100%" }}
+                            value={groupValue ?? undefined}
+                            placeholder="Select group"
+                            options={groupOptions}
+                            onChange={onGroupChange}
+                        />
+                    </ControlField>
+                </ControlGroup>
+            )}
 
             <ControlGroup title="Summary">
                 <ControlField label="Raw samples">

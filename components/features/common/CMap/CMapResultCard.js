@@ -13,6 +13,7 @@ const { Text } = Typography;
 
 const CMapResultCard = ({
     title = "CMap Results",
+    titleExtra = null,
     count = 0,
     columns = [],
     results = [],
@@ -30,11 +31,16 @@ const CMapResultCard = ({
                 <Box
                     component="span"
                     sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
                         fontSize: "24px",
                         fontWeight: 700,
                     }}
                 >
                     {title}
+
+                    {titleExtra}
                 </Box>
             }
             extra={

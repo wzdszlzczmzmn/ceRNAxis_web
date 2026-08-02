@@ -1,19 +1,13 @@
 import { useEffect, useState } from "react";
 
-const getInitialRnaType = availableDegRnaTypes => {
-    if (availableDegRnaTypes.includes("mRNA")) {
-        return "mRNA";
-    }
-
-    return availableDegRnaTypes[0] || null;
+const getInitialRnaType = available => {
+    if (available.includes("mRNA")) return "mRNA";
+    return available[0] ?? null;
 };
 
-const getInitialDegScope = availableDegScopes => {
-    if (availableDegScopes.includes("all")) {
-        return "all";
-    }
-
-    return availableDegScopes[0] || null;
+const getInitialDegScope = available => {
+    if (available.includes("all")) return "all";
+    return available[0] ?? null;
 };
 
 export const useVolcanoQueryConfig = ({
@@ -27,21 +21,27 @@ export const useVolcanoQueryConfig = ({
 
     useEffect(() => {
         setQueryConfig(prev => {
-            const nextRnaType = availableDegRnaTypes.includes(prev.rnaType)
-                ? prev.rnaType
-                : getInitialRnaType(availableDegRnaTypes);
+            const next = {
+                rnaType: availableDegRnaTypes.includes(prev.rnaType)
+                    ? prev.rnaType
+                    : getInitialRnaType(availableDegRnaTypes),
 
-            const nextDegScope = availableDegScopes.includes(prev.degScope)
-                ? prev.degScope
-                : getInitialDegScope(availableDegScopes);
-
-            return {
-                ...prev,
-                rnaType: nextRnaType,
-                degScope: nextDegScope,
+                degScope: availableDegScopes.includes(prev.degScope)
+                    ? prev.degScope
+                    : getInitialDegScope(availableDegScopes),
             };
+
+            return (
+                next.rnaType === prev.rnaType &&
+                next.degScope === prev.degScope
+            )
+                ? prev
+                : next;
         });
-    }, [availableDegRnaTypes, availableDegScopes]);
+    }, [
+        availableDegRnaTypes,
+        availableDegScopes,
+    ]);
 
     return {
         queryConfig,

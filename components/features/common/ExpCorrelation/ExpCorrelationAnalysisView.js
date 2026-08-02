@@ -85,6 +85,9 @@ const ExpCorrelationAnalysisView = ({
     queryConfig,
     setQueryConfig,
 
+    groupOptions = [],
+    groupLabel = "Group",
+
     missingDescription = null,
     unavailableDescription = null,
     noTypeDescription = "No available expression correlation types",
@@ -92,7 +95,8 @@ const ExpCorrelationAnalysisView = ({
     emptyDescription = "No expression correlation data",
 
     showTcgaBasedTag = false,
-    tcgaBasedTooltip = "Expression values for this correlation plot are based on TCGA reference expression data.",
+    tcgaBasedTooltip =
+        "Expression values for this correlation plot are based on TCGA reference expression data.",
 }) => {
     const [visualConfig, setVisualConfig] = useState(DEFAULT_VISUAL_CONFIG);
     const [isControlPanelCollapsed, setIsControlPanelCollapsed] =
@@ -147,6 +151,7 @@ const ExpCorrelationAnalysisView = ({
             const firstPair = getFirstPair(nextPairs);
 
             return {
+                ...prev,
                 type: nextType,
                 gene1: firstPair?.gene1 ?? null,
                 gene2: firstPair?.gene2 ?? null,
@@ -342,10 +347,16 @@ const ExpCorrelationAnalysisView = ({
                                 <ExpCorrelationControlPanel
                                     queryConfig={queryConfig}
                                     setQueryConfig={setQueryConfig}
+
+                                    groupOptions={groupOptions}
+                                    groupLabel={groupLabel}
+
                                     visualConfig={visualConfig}
                                     setVisualConfig={setVisualConfig}
+
                                     validTypes={selectableTypes}
                                     pairOptions={pairOptions}
+
                                     onCollapse={() =>
                                         setIsControlPanelCollapsed(true)
                                     }

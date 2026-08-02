@@ -53,6 +53,11 @@ const DEGPathwayAnalysisView = ({
     pathwayTitle,
     summary,
 
+    groupOptions = [],
+    groupValue = null,
+    groupLabel = "Group",
+    onGroupChange,
+
     isLoading = false,
     isError = false,
 
@@ -61,7 +66,8 @@ const DEGPathwayAnalysisView = ({
     emptyDescription = "No DEG pathway enrichment data",
 
     showTcgaBasedTag = false,
-    tcgaBasedTooltip = "DEG pathway enrichment is based on TCGA reference data.",
+    tcgaBasedTooltip =
+        "DEG pathway enrichment is based on TCGA reference data.",
 }) => {
     const [visualConfig, setVisualConfig] = useState(DEFAULT_VISUAL_CONFIG);
     const [isControlPanelCollapsed, setIsControlPanelCollapsed] =
@@ -84,6 +90,38 @@ const DEGPathwayAnalysisView = ({
             };
         });
     }, [visualConfig.showAll]);
+
+    useEffect(() => {
+        setVisualConfig(prev => {
+            if (!prev.searchInput && !prev.focusKeyword) {
+                return prev;
+            }
+
+            const validValues = new Set(
+                pathwaySearchOptions.map(
+                    item => item.value
+                )
+            );
+
+            const searchValid =
+                !prev.searchInput ||
+                validValues.has(prev.searchInput);
+
+            const focusValid =
+                !prev.focusKeyword ||
+                validValues.has(prev.focusKeyword);
+
+            if (searchValid && focusValid) {
+                return prev;
+            }
+
+            return {
+                ...prev,
+                searchInput: "",
+                focusKeyword: "",
+            };
+        });
+    }, [pathwaySearchOptions]);
 
     const renderPlotContent = () => {
         if (missingDescription) {
@@ -219,9 +257,15 @@ const DEGPathwayAnalysisView = ({
                             max={500}
                         >
                             <DEGPathwayControlPanel
+                                groupOptions={groupOptions}
+                                groupValue={groupValue}
+                                groupLabel={groupLabel}
+                                onGroupChange={onGroupChange}
+
                                 visualConfig={visualConfig}
                                 setVisualConfig={setVisualConfig}
                                 pathwaySearchOptions={pathwaySearchOptions}
+
                                 onCollapse={() =>
                                     setIsControlPanelCollapsed(true)
                                 }
