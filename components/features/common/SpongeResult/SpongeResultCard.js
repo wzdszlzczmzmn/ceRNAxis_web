@@ -23,6 +23,7 @@ const SpongeResultCard = ({
     missingDescription = null,
     unavailableDescription = null,
     emptyDescription = "No Sponge result",
+    showProjectMatches = false,
 }) => {
     const safeResults = Array.isArray(results)
         ? results
@@ -110,6 +111,9 @@ const SpongeResultCard = ({
                         rows={safeResults}
                         columns={columns}
                         loading={isLoading}
+                        showProjectMatches={
+                            showProjectMatches
+                        }
                     />
                 </>
             )}

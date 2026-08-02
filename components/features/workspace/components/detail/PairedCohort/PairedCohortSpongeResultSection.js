@@ -11,6 +11,7 @@ const PairedCohortSpongeResultSection = ({
         <WorkflowSpongeResultSection
             task={task}
             title="Sponge Results"
+            showProjectMatches
         />
     );
 };

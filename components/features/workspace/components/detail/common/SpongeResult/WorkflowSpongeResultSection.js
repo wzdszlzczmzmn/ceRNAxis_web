@@ -15,6 +15,7 @@ import {
 const WorkflowSpongeResultSection = ({
     task,
     title = "Sponge Results",
+    showProjectMatches = true,
 }) => {
     const taskType = task?.task_type;
     const taskData = getTaskData(task);
@@ -29,6 +30,7 @@ const WorkflowSpongeResultSection = ({
         columns,
         summary,
         results,
+        projectMatchEnabled,
         isLoading,
         isError,
     } = useWorkflowSpongeResult({
@@ -67,6 +69,10 @@ const WorkflowSpongeResultSection = ({
             }
             emptyDescription={
                 "No Sponge result"
+            }
+            showProjectMatches={
+                showProjectMatches
+                && projectMatchEnabled
             }
         />
     );

@@ -11,6 +11,7 @@ const HybridReferenceSpongeResultSection = ({
         <WorkflowSpongeResultSection
             task={task}
             title="Sponge Results"
+            showProjectMatches
         />
     );
 };

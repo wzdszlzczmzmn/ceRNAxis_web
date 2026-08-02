@@ -41,6 +41,18 @@ export const useWorkflowSpongeResult = ({
             ? data.columns
             : [],
         summary: data?.summary ?? null,
+
+        projectMatchEnabled: (
+            data?.axis_reference_match_enabled
+            ?? data?.axis_project_match_enabled
+            ?? false
+        ),
+        projectMatchSummary: (
+            data?.axis_reference_match_summary
+            ?? data?.axis_project_match_summary
+            ?? null
+        ),
+
         results: Array.isArray(data?.results)
             ? data.results
             : [],
