@@ -43,13 +43,13 @@ const FILE_FIELD_CONFIGS = [
     {
         key: "exp_file",
         label: "Expression Matrix",
-        filename: "expression.parquet",
+        filename: "expression.h5ad",
     },
-    {
-        key: "meta_file",
-        label: "Sample Meta File",
-        filename: "meta.csv",
-    },
+    // {
+    //     key: "meta_file",
+    //     label: "Sample Meta File",
+    //     filename: "meta.csv",
+    // },
 ];
 
 

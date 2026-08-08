@@ -6,7 +6,7 @@ import {
     Button,
     Col,
     Collapse,
-    Divider,
+    Divider, Dropdown,
     Form,
     Input,
     InputNumber,
@@ -118,32 +118,22 @@ const DATA_MODE_CONFIG = {
 
     sc: {
         label: "Single-cell",
-        identifierColumn: "cell_id",
-        expressionFileLabel: "Single-cell expression matrix",
-        metaFileLabel: "Cell meta file",
+        expressionFileLabel: "Single-cell AnnData file",
         defaultGroupColumn: "Celltype (malignancy)",
         expressionAccept:
-            ".parquet,application/vnd.apache.parquet,application/octet-stream",
-        metadataAccept: ".csv,text/csv",
+            ".h5ad,application/x-hdf5,application/octet-stream",
         expressionHint:
-            "Supported: Parquet (.parquet), First column: cell_id",
-        metadataHint:
-            "Supported: CSV, First column: cell_id, and must contain the selected group column",
+            "Supported: AnnData H5AD (.h5ad). adata.obs must contain the selected group column.",
     },
 
     st: {
         label: "Spatial Transcriptomics",
-        identifierColumn: "spot_id",
-        expressionFileLabel: "Spatial expression matrix",
-        metaFileLabel: "Spot meta file",
+        expressionFileLabel: "Spatial AnnData file",
         defaultGroupColumn: "Celltype (malignancy)",
         expressionAccept:
-            ".parquet,application/vnd.apache.parquet,application/octet-stream",
-        metadataAccept: ".csv,text/csv",
+            ".h5ad,application/x-hdf5,application/octet-stream",
         expressionHint:
-            "Supported: Parquet (.parquet), First column: spot_id",
-        metadataHint:
-            "Supported: CSV, First column: spot_id, and must contain the selected group column",
+            "Supported: AnnData H5AD (.h5ad). adata.obs must contain the selected group column.",
     },
 };
 
@@ -361,7 +351,7 @@ const HybridReferenceModeWrapper = () => {
             return false;
         }
 
-        if (!files.metaFile) {
+        if (isBulkMode && !files.metaFile) {
             messageApi.error(
                 `${modeConfig.metaFileLabel} is required.`
             );
@@ -369,19 +359,14 @@ const HybridReferenceModeWrapper = () => {
         }
 
         const expressionRawFile = getRawFile(files.expressionFile);
-        const metadataRawFile = getRawFile(files.metaFile);
 
-        if (!expressionRawFile || !metadataRawFile) {
-            messageApi.error("Invalid uploaded file.");
+        if (!expressionRawFile) {
+            messageApi.error("Invalid uploaded expression file.");
             return false;
         }
 
         const expressionExtension = getFileExtension(
             expressionRawFile.name
-        );
-
-        const metadataExtension = getFileExtension(
-            metadataRawFile.name
         );
 
         if (isBulkMode && expressionExtension !== ".csv") {
@@ -391,18 +376,31 @@ const HybridReferenceModeWrapper = () => {
             return false;
         }
 
-        if (isSCSTMode && expressionExtension !== ".parquet") {
+        if (isSCSTMode && expressionExtension !== ".h5ad") {
             messageApi.error(
-                `${modeConfig.label} expression file must be a Parquet (.parquet) file.`
+                `${modeConfig.label} expression file must be an H5AD (.h5ad) file.`
             );
             return false;
         }
 
-        if (metadataExtension !== ".csv") {
-            messageApi.error(
-                "Metadata file must be a CSV (.csv) file."
+        if (isBulkMode) {
+            const metadataRawFile = getRawFile(files.metaFile);
+
+            if (!metadataRawFile) {
+                messageApi.error("Invalid uploaded metadata file.");
+                return false;
+            }
+
+            const metadataExtension = getFileExtension(
+                metadataRawFile.name
             );
-            return false;
+
+            if (metadataExtension !== ".csv") {
+                messageApi.error(
+                    "Metadata file must be a CSV (.csv) file."
+                );
+                return false;
+            }
         }
 
         if (typeof workflowParams.usePadj !== "boolean") {
@@ -443,24 +441,18 @@ const HybridReferenceModeWrapper = () => {
 
             if (!groupCol) {
                 messageApi.error(
-                    "Metadata group column is required."
+                    "H5AD obs group column is required."
                 );
                 return false;
             }
 
             if (groupCol.length > 128) {
                 messageApi.error(
-                    "Metadata group column must be no more than 128 characters."
+                    "H5AD obs group column must be no more than 128 characters."
                 );
                 return false;
             }
 
-            if (groupCol === modeConfig.identifierColumn) {
-                messageApi.error(
-                    `Metadata group column cannot be '${modeConfig.identifierColumn}'.`
-                );
-                return false;
-            }
         }
 
         return true;
@@ -472,10 +464,6 @@ const HybridReferenceModeWrapper = () => {
         const expressionRawFile = getRawFile(
             files.expressionFile
         );
-        const metadataRawFile = getRawFile(
-            files.metaFile
-        );
-
         formData.append(
             "task_name",
             workflowParams.taskName.trim()
@@ -511,12 +499,16 @@ const HybridReferenceModeWrapper = () => {
             String(workflowParams.padjCutoffMrna)
         );
 
-        formData.append(
-            "meta_file",
-            metadataRawFile
-        );
-
         if (isBulkMode) {
+            const metadataRawFile = getRawFile(
+                files.metaFile
+            );
+
+            formData.append(
+                "meta_file",
+                metadataRawFile
+            );
+
             formData.append(
                 "mrna_file",
                 expressionRawFile
@@ -761,15 +753,45 @@ const HybridReferenceModeWrapper = () => {
                             Run Demo
                         </Button>
 
-                        <Button
-                            danger
-                            icon={<FileSearchOutlined/>}
+                        <Dropdown
+                            trigger={["hover"]}
+                            placement="bottomLeft"
                             disabled={isSubmitting}
-                            href="/workspace/detail?taskId=d3498b29-bd4b-40fd-ba4b-afe8adbc2d1e"
-                            target="_blank"
+                            menu={{
+                                items: [
+                                    {
+                                        key: "bulk",
+                                        label: (
+                                            <Link
+                                                href="/workspace/detail?taskId=d3498b29-bd4b-40fd-ba4b-afe8adbc2d1e"
+                                                target="_blank"
+                                            >
+                                                Bulk RNA-seq Demo Result
+                                            </Link>
+                                        ),
+                                    },
+                                    {
+                                        key: "scst",
+                                        label: (
+                                            <Link
+                                                href="/workspace/detail?taskId=65f4f05b-1fd6-4655-8a93-c1011a513a2c"
+                                                target="_blank"
+                                            >
+                                                SC/ST Demo Result
+                                            </Link>
+                                        ),
+                                    },
+                                ],
+                            }}
                         >
-                            View Demo Result
-                        </Button>
+                            <Button
+                                danger
+                                icon={<FileSearchOutlined/>}
+                                disabled={isSubmitting}
+                            >
+                                View Demo Result
+                            </Button>
+                        </Dropdown>
 
                         <Divider
                             type="vertical"
@@ -824,11 +846,23 @@ const HybridReferenceModeWrapper = () => {
                             component="span"
                             sx={{ fontSize: "14px" }}
                         >
-                            Hybrid Reference Mode uses an uploaded{" "}
-                            <b>mRNA expression matrix</b>, an uploaded{" "}
-                            <b>{modeConfig.metaFileLabel.toLowerCase()}</b>, and
-                            a selected TCGA reference cancer type to construct
-                            ceRNA-related results.
+                            {isBulkMode ? (
+                                <>
+                                    Hybrid Reference Mode uses an uploaded{" "}
+                                    <b>mRNA expression matrix</b>, an uploaded{" "}
+                                    <b>{modeConfig.metaFileLabel.toLowerCase()}</b>, and
+                                    a selected TCGA reference cancer type to construct
+                                    ceRNA-related results.
+                                </>
+                            ) : (
+                                <>
+                                    Hybrid Reference Mode uses one uploaded{" "}
+                                    <b>AnnData H5AD file</b> and a selected TCGA
+                                    reference cancer type to construct ceRNA-related
+                                    results. The selected group column must exist in{" "}
+                                    <b>adata.obs</b>.
+                                </>
+                            )}
 
                             <Box component="ul" sx={{ mb: 0 }}>
                                 <li>
@@ -841,26 +875,26 @@ const HybridReferenceModeWrapper = () => {
                                     <b>
                                         {isBulkMode
                                             ? "CSV"
-                                            : "Parquet (.parquet)"}
+                                            : "AnnData H5AD (.h5ad)"}
                                     </b>
-                                </li>
-
-                                <li>
-                                    Expression identifier column:{" "}
-                                    <b>{modeConfig.identifierColumn}</b>
-                                </li>
-
-                                <li>
-                                    Metadata file format: <b>CSV</b>
-                                </li>
-
-                                <li>
-                                    Metadata identifier column:{" "}
-                                    <b>{modeConfig.identifierColumn}</b>
                                 </li>
 
                                 {isBulkMode ? (
                                     <>
+                                        <li>
+                                            Expression identifier column:{" "}
+                                            <b>{modeConfig.identifierColumn}</b>
+                                        </li>
+
+                                        <li>
+                                            Metadata file format: <b>CSV</b>
+                                        </li>
+
+                                        <li>
+                                            Metadata identifier column:{" "}
+                                            <b>{modeConfig.identifierColumn}</b>
+                                        </li>
+
                                         <li>
                                             Metadata group column: <b>c_group</b>
                                         </li>
@@ -875,7 +909,7 @@ const HybridReferenceModeWrapper = () => {
                                     </>
                                 ) : (
                                     <li>
-                                        Metadata group column:{" "}
+                                        Required adata.obs column:{" "}
                                         <b>
                                             {workflowParams.groupCol ||
                                                 modeConfig.defaultGroupColumn}
@@ -1109,7 +1143,7 @@ const HybridReferenceModeWrapper = () => {
                         >
                             *{" "}
                         </span>
-                                                Metadata Group Column
+                                                H5AD obs Group Column
                                             </Text>
 
                                             <Form.Item
@@ -1122,7 +1156,7 @@ const HybridReferenceModeWrapper = () => {
                                                         required: true,
                                                         whitespace: true,
                                                         message: (
-                                                            "Please input the metadata " +
+                                                            "Please input the H5AD obs " +
                                                             "group column."
                                                         ),
                                                     },
@@ -1186,45 +1220,17 @@ const HybridReferenceModeWrapper = () => {
                                         </p>
 
                                         <p className="ant-upload-text">
-                                            Click or drag expression file to upload
-                                        </p>
-
-                                        <p className="ant-upload-hint">
-                                            {modeConfig.expressionHint}
-                                        </p>
-                                    </Dragger>
-                                </Form.Item>
-                            </Box>
-
-                            <Box sx={{ flex: 1 }}>
-                                <Form.Item
-                                    label={modeConfig.metaFileLabel}
-                                    required
-                                >
-                                    <Dragger
-                                        {...makeSingleFileUploadProps({
-                                            file: files.metaFile,
-                                            disabled: isSubmitting,
-                                            accept: modeConfig.metadataAccept,
-                                            onChange: file =>
-                                                updateFile("metaFile", file),
-                                        })}
-                                    >
-                                        <p className="ant-upload-drag-icon">
-                                            <InboxOutlined />
-                                        </p>
-
-                                        <p className="ant-upload-text">
-                                            Click or drag metadata file to upload
+                                            {isBulkMode
+                                                ? "Click or drag expression file to upload"
+                                                : "Click or drag H5AD file to upload"}
                                         </p>
 
                                         <p className="ant-upload-hint">
                                             {isBulkMode
-                                                ? modeConfig.metadataHint
+                                                ? modeConfig.expressionHint
                                                 : (
-                                                    `Supported: CSV, First column: ` +
-                                                    `${modeConfig.identifierColumn}, ` +
-                                                    `Required group column: ` +
+                                                    `Supported: AnnData H5AD (.h5ad). ` +
+                                                    `Required adata.obs column: ` +
                                                     `${workflowParams.groupCol ||
                                                     modeConfig.defaultGroupColumn}`
                                                 )
@@ -1233,6 +1239,37 @@ const HybridReferenceModeWrapper = () => {
                                     </Dragger>
                                 </Form.Item>
                             </Box>
+
+                            {isBulkMode && (
+                                <Box sx={{ flex: 1 }}>
+                                    <Form.Item
+                                        label={modeConfig.metaFileLabel}
+                                        required
+                                    >
+                                        <Dragger
+                                            {...makeSingleFileUploadProps({
+                                                file: files.metaFile,
+                                                disabled: isSubmitting,
+                                                accept: modeConfig.metadataAccept,
+                                                onChange: file =>
+                                                    updateFile("metaFile", file),
+                                            })}
+                                        >
+                                            <p className="ant-upload-drag-icon">
+                                                <InboxOutlined />
+                                            </p>
+
+                                            <p className="ant-upload-text">
+                                                Click or drag metadata file to upload
+                                            </p>
+
+                                            <p className="ant-upload-hint">
+                                                {modeConfig.metadataHint}
+                                            </p>
+                                        </Dragger>
+                                    </Form.Item>
+                                </Box>
+                            )}
                         </Stack>
 
                         <Collapse
