@@ -7,10 +7,13 @@ import ErrorView from "@/components/common/status/ErrorView";
 import EmptyView from "@/components/common/status/EmptyView";
 import { useDatasetDetail }
     from "@/components/features/database/hooks/datasetDetail/useDatasetDetail";
-import { useDatasetAnnotationAvailable }
-    from "@/components/features/database/hooks/datasetAnnotation/useDatasetAnnotationAvailable";
-import DatasetAnnotationContent
-    from "@/components/features/database/components/datasetAnnotation/DatasetAnnotationContent";
+import TCGADatasetAnnotationDetail
+    from "@/components/features/database/components/datasetAnnotation/TCGA/TCGADatasetAnnotationDetail";
+import TIMEDBDatasetAnnotationDetail
+    from "@/components/features/database/components/datasetAnnotation/TIMEDB/TIMEDBDatasetAnnotationDetail";
+import SCSTDatasetAnnotationDetail
+    from "@/components/features/database/components/datasetAnnotation/SCST/SCSTDatasetAnnotationDetail";
+
 
 const normalizeQueryValue = value => {
     if (Array.isArray(value)) {
@@ -20,40 +23,65 @@ const normalizeQueryValue = value => {
     return value;
 };
 
+
 const normalizeText = value => {
     return String(value ?? "").trim().toUpperCase();
 };
+
 
 const resolveDatasetAnnotationSource = ({
     dataset,
     metadata,
 }) => {
-    const programme = normalizeText(metadata?.programme);
-    const reference = normalizeText(metadata?.reference);
-    const datasetName = normalizeText(dataset);
+    const programme = normalizeText(
+        metadata?.programme
+    );
+    const reference = normalizeText(
+        metadata?.reference
+    );
+    const datasetName = normalizeText(
+        dataset
+    );
 
-    if (programme === "TCGA" || reference === "TCGA") {
+    if (
+        programme === "TISCH2"
+        || programme === "SCTML"
+    ) {
+        return "SCST";
+    }
+
+    if (
+        programme === "TCGA"
+        || reference === "TCGA"
+    ) {
         return "TCGA";
     }
 
     if (
-        programme === "TIMEDB" ||
-        reference === "TIMEDB" ||
-        datasetName.startsWith("GSE")
+        programme === "TIMEDB"
+        || reference === "TIMEDB"
+        || datasetName.startsWith("GSE")
     ) {
         return "TIMEDB";
     }
 
-    if (datasetName.startsWith("TCGA_")) {
+    if (
+        datasetName.startsWith("TCGA_")
+    ) {
         return "TCGA";
     }
 
     return null;
 };
 
+
 const DatasetAnnotationPage = () => {
     const router = useRouter();
-    const dataset = normalizeQueryValue(router.query.dataset);
+
+    const dataset = normalizeQueryValue(
+        router.query.dataset
+    );
+
     const initialGroupBy = normalizeQueryValue(
         router.query.groupBy
     );
@@ -69,19 +97,15 @@ const DatasetAnnotationPage = () => {
             dataset,
             metadata,
         });
-    }, [dataset, metadata]);
+    }, [
+        dataset,
+        metadata,
+    ]);
 
-    const {
-        annotationAvailability,
-        available,
-        isLoading: isAnnotationAvailabilityLoading,
-        isError: isAnnotationAvailabilityError,
-    } = useDatasetAnnotationAvailable({
-        source: annotationSource,
-        datasetName: dataset,
-    });
-
-    if (!router.isReady || isDatasetLoading) {
+    if (
+        !router.isReady
+        || isDatasetLoading
+    ) {
         return (
             <LoadingView
                 containerSx={{
@@ -139,59 +163,46 @@ const DatasetAnnotationPage = () => {
         );
     }
 
-    if (isAnnotationAvailabilityLoading) {
-        return (
-            <LoadingView
-                containerSx={{
-                    height: "80vh",
-                    marginTop: "40px",
-                }}
-            />
-        );
-    }
-
-    if (isAnnotationAvailabilityError) {
-        return (
-            <ErrorView
-                containerSx={{
-                    height: "80vh",
-                    marginTop: "40px",
-                }}
-            />
-        );
-    }
-
-    if (!available) {
-        return (
-            <EmptyView
-                containerSx={{
-                    height: "80vh",
-                    marginTop: "40px",
-                }}
-                description="No annotation data is available for this dataset."
-            />
-        );
-    }
-
     return (
         <>
             <Head>
-                <title>{dataset} Annotations | ceRNAxisDB</title>
+                <title>
+                    {dataset} Annotations | ceRNAxisDB
+                </title>
+
                 <meta
                     name="description"
-                    content={`Annotations of dataset ${dataset}`}
+                    content={
+                        `Annotations of dataset ${dataset}`
+                    }
                 />
             </Head>
 
-            <DatasetAnnotationContent
-                dataset={dataset}
-                metadata={metadata}
-                annotationSource={annotationSource}
-                annotationAvailability={annotationAvailability}
-                initialGroupBy={initialGroupBy}
-            />
+            {annotationSource === "TCGA" && (
+                <TCGADatasetAnnotationDetail
+                    dataset={dataset}
+                    metadata={metadata}
+                />
+            )}
+
+            {annotationSource === "TIMEDB" && (
+                <TIMEDBDatasetAnnotationDetail
+                    dataset={dataset}
+                    metadata={metadata}
+                    initialGroupBy={initialGroupBy}
+                />
+            )}
+
+            {annotationSource === "SCST" && (
+                <SCSTDatasetAnnotationDetail
+                    dataset={dataset}
+                    metadata={metadata}
+                    initialGroupBy={initialGroupBy}
+                />
+            )}
         </>
     );
 };
+
 
 export default DatasetAnnotationPage;

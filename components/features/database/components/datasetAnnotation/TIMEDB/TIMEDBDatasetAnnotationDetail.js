@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Stack } from "@mui/system";
-import { Alert } from "antd";
 
+import LoadingView from "@/components/common/status/LoadingView";
+import ErrorView from "@/components/common/status/ErrorView";
+import EmptyView from "@/components/common/status/EmptyView";
 import DatasetMetadataDescription
     from "@/components/features/database/components/common/DatasetMetadataDescription";
 import TIMEDBAnnotationNetworkResultWrapper
@@ -20,21 +22,21 @@ import TIMEDBAnnotationDEGPathwaySection
     from "@/components/features/database/components/datasetAnnotation/TIMEDB/TIMEDBAnnotationDEGPathwaySection";
 import TIMEDBAnnotationExpCorrelationSection
     from "@/components/features/database/components/datasetAnnotation/TIMEDB/TIMEDBAnnotationExpCorrelationSection";
+import TIMEDBDatasetAnnotationSpongeResultSection
+    from "@/components/features/database/components/datasetAnnotation/TIMEDB/TIMEDBDatasetAnnotationSpongeResultSection";
 import TIMEDBAnnotationGroupBySelector
     from "@/components/features/database/components/datasetAnnotation/TIMEDB/TIMEDBAnnotationGroupBySelector";
-import {
-    useTIMEDBDatasetGroupByOptions
-} from "@/components/features/database/hooks/datasetAnnotation/useTIMEDBDatasetGroupByOptions";
+import { useTIMEDBDatasetAnnotationAvailable }
+    from "@/components/features/database/hooks/datasetAnnotation/TIMEDB/useTIMEDBDatasetAnnotationAvailable";
+import TIMEDBAnnotationCMScoreSection
+    from "@/components/features/database/components/datasetAnnotation/TIMEDB/TIMEDBAnnotationCMScoreSection"
 
-const getSingleQueryValue = (value) => {
-    if (Array.isArray(value)) {
-        return value[0] ?? null;
-    }
-
-    return value ?? null;
+const STATUS_CONTAINER_SX = {
+    height: "80vh",
+    marginTop: "40px",
 };
 
-const normalizeGroupByValue = (value) => {
+const normalizeGroupByValue = value => {
     return String(value ?? "").trim().toLowerCase();
 };
 
@@ -62,25 +64,24 @@ const findAvailableGroupByValue = ({
 const TIMEDBDatasetAnnotationDetail = ({
     dataset,
     metadata,
-    annotationAvailability,
     initialGroupBy = null,
 }) => {
     const initializedDatasetRef = useRef(null);
 
     const {
-        options: groupByOptions,
+        available,
+        groupByOptions,
         defaultGroupBy,
-        isLoading: isGroupByLoading,
-        isError: isGroupByError,
-        error: groupByError,
-    } = useTIMEDBDatasetGroupByOptions({
+        isLoading,
+        isError,
+    } = useTIMEDBDatasetAnnotationAvailable({
         datasetName: dataset,
     });
 
     const [groupBy, setGroupBy] = useState(null);
 
     useEffect(() => {
-        if (isGroupByLoading) {
+        if (isLoading) {
             return;
         }
 
@@ -110,17 +111,10 @@ const TIMEDBDatasetAnnotationDetail = ({
                 options: groupByOptions,
             });
 
-            /*
-             * For the same dataset, preserve a valid manual selection.
-             */
             if (!isNewDataset && previousMatchedGroupBy) {
                 return previousMatchedGroupBy;
             }
 
-            /*
-             * URL groupBy only applies during initialisation
-             * or when switching to a different dataset.
-             */
             if (initialMatchedGroupBy) {
                 return initialMatchedGroupBy;
             }
@@ -138,7 +132,7 @@ const TIMEDBDatasetAnnotationDetail = ({
         initialGroupBy,
         defaultGroupBy,
         groupByOptions,
-        isGroupByLoading,
+        isLoading,
     ]);
 
     const currentGroupByOption = useMemo(() => {
@@ -154,11 +148,49 @@ const TIMEDBDatasetAnnotationDetail = ({
         groupByOptions,
     ]);
 
-    const groupType =
-        currentGroupByOption?.groupType ?? null;
+    if (isLoading) {
+        return <LoadingView containerSx={STATUS_CONTAINER_SX} />;
+    }
 
-    const visualizations =
-        currentGroupByOption?.visualizations ?? {};
+    if (isError) {
+        return <ErrorView containerSx={STATUS_CONTAINER_SX} />;
+    }
+
+    if (!available) {
+        return (
+            <EmptyView
+                containerSx={STATUS_CONTAINER_SX}
+                description="No TIMEDB annotation visualization is available for this dataset."
+            />
+        );
+    }
+
+    if (!currentGroupByOption) {
+        return <LoadingView containerSx={STATUS_CONTAINER_SX} />;
+    }
+
+    const groupType = currentGroupByOption.groupType;
+    const visualizations = currentGroupByOption.visualizations;
+
+    const annotationNetwork =
+        visualizations.annotation_network ?? {};
+    const axisFinal =
+        visualizations.axis_final ?? {};
+    const cmap =
+        visualizations.cmap ?? {};
+    const volcano =
+        visualizations.volcano ?? {};
+    const log2fcCorrelation =
+        visualizations.log2fc_correlation ?? {};
+    const expCorrelation =
+        visualizations.exp_correlation ?? {};
+    const survival =
+        visualizations.survival ?? {};
+    const degPathway =
+        visualizations.deg_pathway ?? {};
+    const sponge =
+        visualizations.sponge ?? {};
+    const CMdrug = visualizations.CMdrug ?? {};
 
     return (
         <Stack spacing={4} sx={{ pt: "12px", px: "32px" }}>
@@ -168,32 +200,11 @@ const TIMEDBDatasetAnnotationDetail = ({
                 value={groupBy}
                 onChange={setGroupBy}
                 options={groupByOptions}
-                loading={isGroupByLoading}
-                disabled={isGroupByError}
+                loading={false}
+                disabled={false}
             />
 
-            {isGroupByError && (
-                <Alert
-                    type="error"
-                    showIcon
-                    message="Failed to load TIMEDB annotation group types."
-                    description={
-                        groupByError?.message
-                        ?? "Please check the group-by availability API."
-                    }
-                />
-            )}
-
-            {!isGroupByLoading && !isGroupByError && groupByOptions.length === 0 && (
-                <Alert
-                    type="warning"
-                    showIcon
-                    message="No available TIMEDB annotation result."
-                    description="No group type contains available visualization files, so this dataset annotation is treated as unsuccessful."
-                />
-            )}
-
-            {visualizations.annotation_network && (
+            {annotationNetwork.available && (
                 <TIMEDBAnnotationNetworkResultWrapper
                     dataset={dataset}
                     groupBy={groupBy}
@@ -202,7 +213,7 @@ const TIMEDBDatasetAnnotationDetail = ({
                 />
             )}
 
-            {visualizations.axis_final && (
+            {axisFinal.available && (
                 <TIMEDBAnnotationAxisFinalSection
                     dataset={dataset}
                     groupBy={groupBy}
@@ -211,7 +222,15 @@ const TIMEDBDatasetAnnotationDetail = ({
                 />
             )}
 
-            {visualizations.cmap && (
+            {sponge.available && (
+                <TIMEDBDatasetAnnotationSpongeResultSection
+                    dataset={dataset}
+                    groupBy={groupBy}
+                    groupType={groupType}
+                />
+            )}
+
+            {cmap.available && (
                 <TIMEDBAnnotationCMapResultSection
                     dataset={dataset}
                     groupBy={groupBy}
@@ -220,27 +239,27 @@ const TIMEDBDatasetAnnotationDetail = ({
                 />
             )}
 
-            {visualizations.volcano && (
+            {volcano.available && (
                 <TIMEDBAnnotationVolcanoAnalysisSection
                     dataset={dataset}
                     groupBy={groupBy}
                     groupType={groupType}
-                    annotationAvailability={annotationAvailability}
+                    annotationAvailability={volcano}
                     groupByAvailability={currentGroupByOption}
                 />
             )}
 
-            {visualizations.log2fc_correlation && (
+            {log2fcCorrelation.available && (
                 <TIMEDBAnnotationLog2FCCorrelationSection
                     dataset={dataset}
                     groupBy={groupBy}
                     groupType={groupType}
-                    annotationAvailability={annotationAvailability}
+                    annotationAvailability={log2fcCorrelation}
                     groupByAvailability={currentGroupByOption}
                 />
             )}
 
-            {visualizations.exp_correlation && (
+            {expCorrelation.available && (
                 <TIMEDBAnnotationExpCorrelationSection
                     dataset={dataset}
                     groupBy={groupBy}
@@ -249,7 +268,7 @@ const TIMEDBDatasetAnnotationDetail = ({
                 />
             )}
 
-            {visualizations.survival && (
+            {survival.available && (
                 <TIMEDBAnnotationSurvivalSection
                     dataset={dataset}
                     groupBy={groupBy}
@@ -258,12 +277,20 @@ const TIMEDBDatasetAnnotationDetail = ({
                 />
             )}
 
-            {visualizations.deg_pathway && (
+            {degPathway.available && (
                 <TIMEDBAnnotationDEGPathwaySection
                     dataset={dataset}
                     groupBy={groupBy}
                     groupType={groupType}
                     groupByAvailability={currentGroupByOption}
+                />
+            )}
+
+            {CMdrug.available && (
+                <TIMEDBAnnotationCMScoreSection
+                    dataset={dataset}
+                    groupBy={groupBy}
+                    groupType={groupType}
                 />
             )}
         </Stack>

@@ -382,8 +382,7 @@ export const getDatasetMetadataColumns = (geneBioType) => {
             align: "center",
             render: (_, record) => {
                 const dataset = record?.dataset
-                const isSampleDataset = record?.obs_type === 'sample'
-                const showAnnotation = geneBioType === "mRNA" && isSampleDataset
+                const showAnnotation = geneBioType === "mRNA"
 
                 return (
                     <Stack direction="row" spacing={2} justifyContent="center">

@@ -1,21 +1,14 @@
 import useSWR from "swr";
 
 import { fetcher } from "@/lib/api/fetcher";
-import { getWorkflowSpongeResultURL } from "@/lib/api/analysis";
+import { getHybridReferenceSpongeResultURL } from "@/lib/api/analysis";
 
 
-export const useWorkflowSpongeResult = ({
-    taskType,
+export const useHybridReferenceSpongeResult = ({
     taskUUID,
 }) => {
-    const shouldFetch = Boolean(
-        taskType &&
-        taskUUID
-    );
-
-    const url = shouldFetch
-        ? getWorkflowSpongeResultURL({
-            taskType,
+    const url = taskUUID
+        ? getHybridReferenceSpongeResultURL({
             taskUUID,
         })
         : null;

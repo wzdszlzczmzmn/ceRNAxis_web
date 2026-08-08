@@ -2,18 +2,18 @@ import DatasetAnnotationGroupBySelector
     from "@/components/features/database/components/datasetAnnotation/common/DatasetAnnotationGroupBySelector";
 
 
-const TIMEDBAnnotationGroupBySelector = props => {
+const SCSTAnnotationGroupBySelector = props => {
     return (
         <DatasetAnnotationGroupBySelector
             {...props}
-            placeholder="Select group type"
-            loadingPlaceholder="Loading group types..."
+            placeholder="Select group by"
+            loadingPlaceholder="Loading group by..."
             description={
-                "Controls the grouping type used by downstream annotation result requests."
+                "Controls the metadata grouping used by downstream SC/ST annotation visualizations."
             }
         />
     );
 };
 
 
-export default TIMEDBAnnotationGroupBySelector;
+export default SCSTAnnotationGroupBySelector;
