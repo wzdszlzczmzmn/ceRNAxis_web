@@ -280,6 +280,15 @@ const buildColumns = summary => {
                     width: 135,
                     render: renderText,
                 },
+                {
+                    title: "Group Value",
+                    dataIndex: "group_value",
+                    key: "group_value",
+                    fixed: "left",
+                    align: "center",
+                    width: 150,
+                    render: renderText,
+                },
             ],
         },
         {

@@ -4,7 +4,7 @@ import { Stack } from "@mui/system"
 import { Button, Dropdown } from "antd"
 import { DownloadOutlined, DownOutlined, FileTextOutlined, ProfileOutlined } from "@ant-design/icons"
 import {
-    getDatasetDownloadUrl,
+    getDatasetDownloadUrl, getSCSTAnnotationDownloadUrl,
     getTCGAAnnotationDownloadUrl,
     getTIMEDBAnnotationDownloadUrl
 } from "@/lib/api/database/datasetMetaTable"
@@ -157,13 +157,24 @@ const TIMEDB_ANNOTATION_DATASETS = new Set([
     "GSE92921",
 ])
 
-const getAnnotationDownloadType = (dataset) => {
+const getAnnotationDownloadType = (record) => {
+    const dataset = record?.dataset
+    const obsType = record?.obs_type
+
+    if (!dataset) {
+        return null
+    }
+
     if (TCGA_ANNOTATION_DATASETS.has(dataset)) {
         return "tcga"
     }
 
     if (TIMEDB_ANNOTATION_DATASETS.has(dataset)) {
         return "timedb"
+    }
+
+    if (obsType === "cell" || obsType === "spot") {
+        return "scst"
     }
 
     return null
@@ -178,11 +189,22 @@ const getAnnotationDownloadUrl = (dataset, annotationType) => {
         return getTIMEDBAnnotationDownloadUrl(dataset)
     }
 
+    if (annotationType === "scst") {
+        return getSCSTAnnotationDownloadUrl(dataset)
+    }
+
     return null
 }
 
-const DatasetDownloadButton = ({ dataset }) => {
-    const annotationType = getAnnotationDownloadType(dataset)
+const DatasetDownloadButton = ({ record }) => {
+    const dataset = record?.dataset
+
+    if (!dataset) {
+        return null
+    }
+
+    const annotationType = getAnnotationDownloadType(record)
+
     const annotationDownloadUrl = getAnnotationDownloadUrl(
         dataset,
         annotationType,
@@ -403,7 +425,7 @@ export const getDatasetMetadataColumns = (geneBioType) => {
                             </Button>
                         )}
 
-                        <DatasetDownloadButton dataset={dataset} />
+                        <DatasetDownloadButton record={record} />
                     </Stack>
                 )
             },

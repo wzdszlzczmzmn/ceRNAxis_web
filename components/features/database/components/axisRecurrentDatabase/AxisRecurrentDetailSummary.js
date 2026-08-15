@@ -205,27 +205,35 @@ const AxisRecurrentDetailSummary = ({
                     </Descriptions.Item>
 
                     <Descriptions.Item label="TCGA Datasets">
-                        {renderCount(
-                            summary.tcga_dataset_count
-                        )}
+                        {renderCount(summary.tcga_dataset_count)}
                     </Descriptions.Item>
 
                     <Descriptions.Item label="TIMEDB Datasets">
-                        {renderCount(
-                            summary.timedb_dataset_count
-                        )}
+                        {renderCount(summary.timedb_dataset_count)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="SC Datasets">
+                        {renderCount(summary.sc_dataset_count)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="ST Datasets">
+                        {renderCount(summary.st_dataset_count)}
                     </Descriptions.Item>
 
                     <Descriptions.Item label="TCGA Contexts">
-                        {renderCount(
-                            summary.tcga_context_count
-                        )}
+                        {renderCount(summary.tcga_context_count)}
                     </Descriptions.Item>
 
                     <Descriptions.Item label="TIMEDB Contexts">
-                        {renderCount(
-                            summary.timedb_context_count
-                        )}
+                        {renderCount(summary.timedb_context_count)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="SC Contexts">
+                        {renderCount(summary.sc_context_count)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="ST Contexts">
+                        {renderCount(summary.st_context_count)}
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Module2 Contexts">
