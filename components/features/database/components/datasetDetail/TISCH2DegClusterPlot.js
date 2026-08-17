@@ -126,8 +126,13 @@ const formatClusterTooltip = point => {
     })}
 
                 ${buildTooltipRow({
-        label: "-log10(adj p)",
-        value: getSafeNumber(point.neg_log10_adjusted_p).toFixed(4),
+        label: point.is_zero_adjusted_p
+            ? "Plot Y (adjusted p = 0)"
+            : "-log10(adj p)",
+
+        value: getSafeNumber(
+            point.neg_log10_adjusted_p
+        ).toFixed(4),
     })}
 
                 ${buildTooltipRow({
@@ -159,7 +164,7 @@ const getPlotGrid = ({
     containerHeight,
     top = 90,
     bottom = 120,
-    left = 70,
+    left = 110,
     right = 40,
 }) => {
     if (containerWidth <= 0 || containerHeight <= 0) {
@@ -384,6 +389,20 @@ const getChartOption = ({
     const points = data?.points ?? []
     const clusters = data?.clusters ?? []
     const thresholds = data?.thresholds ?? {}
+    const zeroPvaluePlot = data?.zero_pvalue_plot ?? {}
+
+    const zeroPvalueCount = getSafeNumber(
+        zeroPvaluePlot.count,
+        0
+    )
+
+    const zeroPvaluePlotY = Number(
+        zeroPvaluePlot.neg_log10_plot_y
+    )
+
+    const hasZeroPvalueLine =
+        zeroPvalueCount > 0 &&
+        Number.isFinite(zeroPvaluePlotY)
 
     const computedTitle = [
         titlePrimary,
@@ -398,7 +417,11 @@ const getChartOption = ({
         : 1
 
     const maxPointY = points.length
-        ? Math.max(...points.map(item => getSafeNumber(item.plot_y)))
+        ? Math.max(
+            ...points.map(
+                item => getSafeNumber(item.plot_y)
+            )
+        )
         : 1
 
     const thresholdY = getSafeNumber(
@@ -407,7 +430,13 @@ const getChartOption = ({
     )
 
     const yMax = roundUpOneDecimal(
-        Math.max(maxPointY, thresholdY) + 0.2
+        Math.max(
+            maxPointY,
+            thresholdY,
+            hasZeroPvalueLine
+                ? zeroPvaluePlotY
+                : 0
+        ) + 0.2
     )
 
     const grid = getPlotGrid({
@@ -436,9 +465,28 @@ const getChartOption = ({
         ]
         : []
 
+    const zeroPvalueLine = hasZeroPvalueLine
+        ? [
+            {
+                yAxis: zeroPvaluePlotY,
+
+                lineStyle: {
+                    color: "#000",
+                    type: "dashed",
+                    width: 1.5,
+                },
+
+                label: {
+                    show: false,
+                },
+            },
+        ]
+        : []
+
     const markLineData = [
         ...panelMarkLines,
         ...thresholdLine,
+        ...zeroPvalueLine,
     ]
 
     const highlightData = getHighlightData({
@@ -579,6 +627,32 @@ const getChartOption = ({
                 endValue: defaultZoomEndValue,
             },
         ],
+
+        graphic: hasZeroPvalueLine
+            ? [
+                {
+                    type: "text",
+                    left: 4,
+                    top: echarts.number.linearMap(
+                        zeroPvaluePlotY,
+                        [-0.1, yMax],
+                        [
+                            height - grid.bottom,
+                            grid.top,
+                        ],
+                        true
+                    ) - 8,
+                    style: {
+                        text:
+                            `Adjusted p = 0 (${zeroPvalueCount})`,
+                        fill: "#262626",
+                        fontSize: 11,
+                        textAlign: "left",
+                    },
+                    silent: true,
+                },
+            ]
+            : [],
 
         series: [
             ...REGULATION_ORDER.map((regulation, index) => {

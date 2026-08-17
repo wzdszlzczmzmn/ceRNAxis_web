@@ -154,8 +154,12 @@ const formatVolcanoTooltip = ({
     })}
 
                 ${buildTooltipRow({
-        label: `-log10(${pvalueLabel})`,
-        value: Number(item.neg_log10_pvalue).toFixed(4),
+        label: item.is_zero_pvalue
+            ? "Plot Y (p-value = 0)"
+            : `-log10(${pvalueLabel})`,
+        value: Number(
+            item.neg_log10_pvalue
+        ).toFixed(4),
     })}
             </table>
         </div>
@@ -200,13 +204,33 @@ const VolcanoPlotCore = ({
 
         const thresholdY = -Math.log10(safePvalueCutoff)
 
+        const zeroPvaluePlot = data.zero_pvalue_plot
+
+        const zeroPvalueCount = getSafeNumber(
+            zeroPvaluePlot?.count,
+            0
+        )
+
+        const zeroPvaluePlotY = Number(
+            zeroPvaluePlot?.neg_log10_plot_y
+        )
+
+        const hasZeroPvalueLine =
+            zeroPvalueCount > 0 &&
+            Number.isFinite(zeroPvaluePlotY)
+
         const allPoints = GROUP_ORDER.flatMap(group =>
             (data.groups[group] || []).map(item => ({
                 ...item,
                 regulation: group,
                 log2FC: getSafeNumber(item.log2FC),
                 pvalue: getSafeNumber(item.pvalue),
-                neg_log10_pvalue: getSafeNumber(item.neg_log10_pvalue),
+                neg_log10_pvalue: getSafeNumber(
+                    item.neg_log10_pvalue
+                ),
+                is_zero_pvalue: Boolean(
+                    item.is_zero_pvalue
+                ),
             }))
         )
 
@@ -228,7 +252,12 @@ const VolcanoPlotCore = ({
 
         const maxY = Math.max(
             thresholdY,
-            ...allPoints.map(item => item.neg_log10_pvalue)
+            hasZeroPvalueLine
+                ? zeroPvaluePlotY
+                : 0,
+            ...allPoints.map(
+                item => item.neg_log10_pvalue
+            )
         )
 
         const yMax = roundUpOneDecimal(maxY + 0.1)
@@ -397,9 +426,36 @@ const VolcanoPlotCore = ({
                                         show: false,
                                     },
                                     data: [
-                                        { xAxis: -safeLogfcCutoff },
-                                        { xAxis: safeLogfcCutoff },
-                                        { yAxis: thresholdY },
+                                        {
+                                            xAxis: -safeLogfcCutoff,
+                                        },
+                                        {
+                                            xAxis: safeLogfcCutoff,
+                                        },
+                                        {
+                                            yAxis: thresholdY,
+                                        },
+
+                                        ...(hasZeroPvalueLine
+                                            ? [
+                                                {
+                                                    yAxis: zeroPvaluePlotY,
+
+                                                    lineStyle: {
+                                                        type: "dashed",
+                                                        width: 1.5,
+                                                    },
+
+                                                    label: {
+                                                        show: true,
+                                                        formatter:
+                                                            `${pvalueShortLabel} = 0 (${zeroPvalueCount})`,
+                                                        position: "insideEndTop",
+                                                        fontSize: 11,
+                                                    },
+                                                },
+                                            ]
+                                            : []),
                                     ],
                                 }
                                 : undefined,

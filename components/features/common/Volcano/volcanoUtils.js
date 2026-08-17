@@ -35,6 +35,7 @@ export const normalizeVolcanoData = data => {
             log2FC: item.log2FC,
             pvalue: item.pvalue,
             neg_log10_pvalue: item.neg_log10_pvalue,
+            is_zero_pvalue: Boolean(item.is_zero_pvalue),
         }));
     });
 
