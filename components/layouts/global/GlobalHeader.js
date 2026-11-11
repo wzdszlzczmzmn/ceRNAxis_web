@@ -4,7 +4,7 @@ import Image from "next/image"
 import { useRouter } from "next/router"
 import CustomHeaderMenu from "@/components/ui/menu/CustomHeaderMenu"
 import {
-    BarChartOutlined,
+    BarChartOutlined, FileSearchOutlined,
     FileTextOutlined,
     HomeOutlined, MailOutlined,
     ProfileOutlined, SearchOutlined
@@ -144,7 +144,7 @@ const menuItems = [
     {
         key: 'analysis',
         label: 'Query',
-        icon: <SearchOutlined style={{ fontSize: '20px' }}/>,
+        icon: <FileSearchOutlined style={{ fontSize: '20px' }}/>,
         link: '/workflow'
     },
     {
