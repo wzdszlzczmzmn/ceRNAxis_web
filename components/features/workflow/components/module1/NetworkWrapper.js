@@ -318,7 +318,7 @@ const NetworkWrapper = () => {
                                 m: 0,
                             }}
                         >
-                            ceRNA Axis Custom List Query
+                            Custom List Query
                         </Box>
 
                         <BasicChip

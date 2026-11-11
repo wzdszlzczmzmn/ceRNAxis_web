@@ -18,7 +18,7 @@ const customTheme = {
 const menuItems = [
     {
         key: 'mode1',
-        label: 'ceRNA Axis Custom List Query'
+        label: 'Custom List Query'
     },
     {
         key: 'mode2',

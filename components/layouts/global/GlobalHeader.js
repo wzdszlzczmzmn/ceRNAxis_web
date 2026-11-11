@@ -7,7 +7,7 @@ import {
     BarChartOutlined,
     FileTextOutlined,
     HomeOutlined, MailOutlined,
-    ProfileOutlined
+    ProfileOutlined, SearchOutlined
 } from "@ant-design/icons"
 import DatabaseIcon from "@/components/icons/Database"
 
@@ -143,8 +143,8 @@ const menuItems = [
     },
     {
         key: 'analysis',
-        label: 'Workflow',
-        icon: <BarChartOutlined style={{ fontSize: '20px' }}/>,
+        label: 'Query',
+        icon: <SearchOutlined style={{ fontSize: '20px' }}/>,
         link: '/workflow'
     },
     {
