@@ -16,6 +16,7 @@ import {
     Spin,
     Typography,
     Upload,
+    Tooltip,
 } from "antd";
 import {
     ExperimentOutlined,
@@ -24,6 +25,7 @@ import {
     InboxOutlined,
     InfoCircleFilled,
     QuestionCircleOutlined,
+    InfoCircleOutlined,
 } from "@ant-design/icons";
 import { Box, Stack } from "@mui/system";
 import Link from "next/link";
@@ -47,41 +49,41 @@ const { Text, Link: AntLink } = Typography;
 const TASK_NAME_PATTERN = /^[A-Za-z0-9_-]+$/;
 const TASK_NAME_MAX_LENGTH = 64;
 
-const TCGA_TYPE_OPTIONS = [
-    { label: "TCGA_ACC", value: "TCGA_ACC" },
-    { label: "TCGA_BLCA", value: "TCGA_BLCA" },
-    { label: "TCGA_BRCA", value: "TCGA_BRCA" },
-    { label: "TCGA_CESC", value: "TCGA_CESC" },
-    { label: "TCGA_CHOL", value: "TCGA_CHOL" },
-    { label: "TCGA_COAD", value: "TCGA_COAD" },
-    { label: "TCGA_DLBC", value: "TCGA_DLBC" },
-    { label: "TCGA_ESCA", value: "TCGA_ESCA" },
-    { label: "TCGA_GBM", value: "TCGA_GBM" },
-    { label: "TCGA_HNSC", value: "TCGA_HNSC" },
-    { label: "TCGA_KICH", value: "TCGA_KICH" },
-    { label: "TCGA_KIRC", value: "TCGA_KIRC" },
-    { label: "TCGA_KIRP", value: "TCGA_KIRP" },
-    { label: "TCGA_LAML", value: "TCGA_LAML" },
-    { label: "TCGA_LGG", value: "TCGA_LGG" },
-    { label: "TCGA_LIHC", value: "TCGA_LIHC" },
-    { label: "TCGA_LUAD", value: "TCGA_LUAD" },
-    { label: "TCGA_LUSC", value: "TCGA_LUSC" },
-    { label: "TCGA_MESO", value: "TCGA_MESO" },
-    { label: "TCGA_OV", value: "TCGA_OV" },
-    { label: "TCGA_PAAD", value: "TCGA_PAAD" },
-    { label: "TCGA_PCPG", value: "TCGA_PCPG" },
-    { label: "TCGA_PRAD", value: "TCGA_PRAD" },
-    { label: "TCGA_READ", value: "TCGA_READ" },
-    { label: "TCGA_SARC", value: "TCGA_SARC" },
-    { label: "TCGA_SKCM", value: "TCGA_SKCM" },
-    { label: "TCGA_STAD", value: "TCGA_STAD" },
-    { label: "TCGA_TGCT", value: "TCGA_TGCT" },
-    { label: "TCGA_THCA", value: "TCGA_THCA" },
-    { label: "TCGA_THYM", value: "TCGA_THYM" },
-    { label: "TCGA_UCEC", value: "TCGA_UCEC" },
-    { label: "TCGA_UCS", value: "TCGA_UCS" },
-    { label: "TCGA_UVM", value: "TCGA_UVM" },
-];
+// const TCGA_TYPE_OPTIONS = [
+//     { label: "TCGA_ACC", value: "TCGA_ACC" },
+//     { label: "TCGA_BLCA", value: "TCGA_BLCA" },
+//     { label: "TCGA_BRCA", value: "TCGA_BRCA" },
+//     { label: "TCGA_CESC", value: "TCGA_CESC" },
+//     { label: "TCGA_CHOL", value: "TCGA_CHOL" },
+//     { label: "TCGA_COAD", value: "TCGA_COAD" },
+//     { label: "TCGA_DLBC", value: "TCGA_DLBC" },
+//     { label: "TCGA_ESCA", value: "TCGA_ESCA" },
+//     { label: "TCGA_GBM", value: "TCGA_GBM" },
+//     { label: "TCGA_HNSC", value: "TCGA_HNSC" },
+//     { label: "TCGA_KICH", value: "TCGA_KICH" },
+//     { label: "TCGA_KIRC", value: "TCGA_KIRC" },
+//     { label: "TCGA_KIRP", value: "TCGA_KIRP" },
+//     { label: "TCGA_LAML", value: "TCGA_LAML" },
+//     { label: "TCGA_LGG", value: "TCGA_LGG" },
+//     { label: "TCGA_LIHC", value: "TCGA_LIHC" },
+//     { label: "TCGA_LUAD", value: "TCGA_LUAD" },
+//     { label: "TCGA_LUSC", value: "TCGA_LUSC" },
+//     { label: "TCGA_MESO", value: "TCGA_MESO" },
+//     { label: "TCGA_OV", value: "TCGA_OV" },
+//     { label: "TCGA_PAAD", value: "TCGA_PAAD" },
+//     { label: "TCGA_PCPG", value: "TCGA_PCPG" },
+//     { label: "TCGA_PRAD", value: "TCGA_PRAD" },
+//     { label: "TCGA_READ", value: "TCGA_READ" },
+//     { label: "TCGA_SARC", value: "TCGA_SARC" },
+//     { label: "TCGA_SKCM", value: "TCGA_SKCM" },
+//     { label: "TCGA_STAD", value: "TCGA_STAD" },
+//     { label: "TCGA_TGCT", value: "TCGA_TGCT" },
+//     { label: "TCGA_THCA", value: "TCGA_THCA" },
+//     { label: "TCGA_THYM", value: "TCGA_THYM" },
+//     { label: "TCGA_UCEC", value: "TCGA_UCEC" },
+//     { label: "TCGA_UCS", value: "TCGA_UCS" },
+//     { label: "TCGA_UVM", value: "TCGA_UVM" },
+// ];
 
 const LNCRNA_TYPE_OPTIONS = [
     { label: "log2count", value: "log2count" },
@@ -143,7 +145,6 @@ const initialWorkflowParams = {
     taskName: "",
     tcgaType: undefined,
     lncrnaType: "log2tpm",
-    mapInfo: undefined,
 
     groupCol: "c_group",
 
@@ -165,7 +166,6 @@ const demoWorkflowParams = {
     taskName: "demo_task_module3",
     tcgaType: "TCGA_ACC",
     lncrnaType: "log2tpm",
-    mapInfo: "ImmiRImmiR_ACC",
 
     groupCol: "c_group",
 
@@ -261,6 +261,15 @@ const HybridReferenceModeWrapper = () => {
         isError: isImmuneMapError,
     } = useImmuneAnnotationList();
 
+    const TCGA_TYPE_OPTIONS = immuneMapOptions.map(({ label }) => ({
+        label: `TCGA_${label}`,
+        value: `TCGA_${label}`,
+    }));
+
+    const selectedImmuneMap = immuneMapOptions.find(
+        option => `TCGA_${option.label}` === workflowParams.tcgaType
+    );
+
     const updateWorkflowParams = (patch) => {
         setWorkflowParams(prev => ({
             ...prev,
@@ -334,11 +343,6 @@ const HybridReferenceModeWrapper = () => {
 
         if (!workflowParams.lncrnaType) {
             messageApi.error("lncRNA value type is required.");
-            return false;
-        }
-
-        if (!workflowParams.mapInfo) {
-            messageApi.error("Immune annotation file is required.");
             return false;
         }
 
@@ -481,7 +485,7 @@ const HybridReferenceModeWrapper = () => {
 
         formData.append(
             "map_info",
-            workflowParams.mapInfo
+            selectedImmuneMap.value
         );
 
         formData.append(
@@ -838,7 +842,7 @@ const HybridReferenceModeWrapper = () => {
                             component="span"
                             sx={{ fontWeight: "bold", fontSize: "16px" }}
                         >
-                            Input file format requirements
+                            Input Requirements
                         </Box>
                     }
                     description={
@@ -866,8 +870,7 @@ const HybridReferenceModeWrapper = () => {
 
                             <Box component="ul" sx={{ mb: 0 }}>
                                 <li>
-                                    Data mode:{" "}
-                                    <b>{modeConfig.label}</b>
+                                    <b>Input Data Mode:</b> {modeConfig.label}
                                 </li>
 
                                 <li>
@@ -918,13 +921,15 @@ const HybridReferenceModeWrapper = () => {
                                 )}
 
                                 <li>
-                                    Cancer type: used as the TCGA reference.
+                                    <b>TCGA Reference Cancer Type:</b>{" "}
+                                    Select the cancer type used as the TCGA reference.
                                 </li>
 
                                 <li>
-                                    use_padj: if <b>TRUE</b>, adjusted p-value
-                                    is used for DEG filtering; if <b>FALSE</b>,
-                                    raw p-value is used.
+                                    <b>Use adjusted p-value:</b>{" "}
+                                    Select &#34;Use adjusted p-value&#34; to filter DEGs
+                                    using adjusted p-values, or &#34;Use raw p-value&#34;
+                                    to use raw p-values instead.
                                 </li>
                             </Box>
                         </Box>
@@ -937,7 +942,7 @@ const HybridReferenceModeWrapper = () => {
                     initialValues={initialWorkflowParams}
                 >
                     <Stack spacing={3}>
-                        <Row gutter={[20, 16]}>
+                    <Row gutter={[20, 16]}>
                             <Col xs={24} md={12}>
                                 <Space
                                     direction="vertical"
@@ -991,10 +996,35 @@ const HybridReferenceModeWrapper = () => {
                                     size={6}
                                     style={{ width: "100%" }}
                                 >
-                                    <Text strong>
-                                        <span style={{ color: "#ff4d4f" }}>* </span>
-                                        TCGA Reference Cancer Type
-                                    </Text>
+                                    <Space
+                                        align="center"
+                                        style={{
+                                            width: "100%",
+                                            justifyContent: "space-between",
+                                        }}
+                                    >
+                                        <Space size={6} align="center">
+                                            <Text strong>
+                                                <span style={{ color: "#ff4d4f" }}>* </span>
+                                                TCGA Reference Cancer Type
+                                            </Text>
+
+                                            <Tooltip
+                                                title="The corresponding immune annotation file will be automatically selected based on the chosen TCGA reference cancer type."
+                                            >
+                                                <InfoCircleOutlined
+                                                    style={{
+                                                        color: "#8c8c8c",
+                                                        cursor: "help",
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        </Space>
+
+                                        <Link href="/workflow/immuneAnnotations">
+                                            Explore Immune Annotations
+                                        </Link>
+                                    </Space>
 
                                     <Form.Item
                                         name="tcgaType"
@@ -1065,63 +1095,63 @@ const HybridReferenceModeWrapper = () => {
                                 </Space>
                             </Col>
 
-                            <Col xs={24} md={12}>
-                                <Space
-                                    direction="vertical"
-                                    size={6}
-                                    style={{ width: "100%" }}
-                                >
-                                    <Space
-                                        style={{
-                                            width: "100%",
-                                            justifyContent: "space-between",
-                                        }}
-                                    >
-                                        <Text strong>
-                                            <span style={{ color: "#ff4d4f" }}>* </span>
-                                            Immune Annotation File
-                                        </Text>
+                            {/*<Col xs={24} md={12}>*/}
+                            {/*    <Space*/}
+                            {/*        direction="vertical"*/}
+                            {/*        size={6}*/}
+                            {/*        style={{ width: "100%" }}*/}
+                            {/*    >*/}
+                            {/*        <Space*/}
+                            {/*            style={{*/}
+                            {/*                width: "100%",*/}
+                            {/*                justifyContent: "space-between",*/}
+                            {/*            }}*/}
+                            {/*        >*/}
+                            {/*            <Text strong>*/}
+                            {/*                <span style={{ color: "#ff4d4f" }}>* </span>*/}
+                            {/*                Immune Annotation File*/}
+                            {/*            </Text>*/}
 
-                                        <Link href="/workflow/immuneAnnotations">
-                                            <AntLink>
-                                                Explore Annotations
-                                            </AntLink>
-                                        </Link>
-                                    </Space>
+                            {/*            <Link href="/workflow/immuneAnnotations">*/}
+                            {/*                <AntLink>*/}
+                            {/*                    Explore Annotations*/}
+                            {/*                </AntLink>*/}
+                            {/*            </Link>*/}
+                            {/*        </Space>*/}
 
-                                    <Form.Item
-                                        name="mapInfo"
-                                        style={{ marginBottom: 0 }}
-                                        rules={[
-                                            {
-                                                required: true,
-                                                message:
-                                                    "Please select an immune annotation file.",
-                                            },
-                                        ]}
-                                    >
-                                        <Select
-                                            value={workflowParams.mapInfo}
-                                            onChange={(value) =>
-                                                updateWorkflowParams({
-                                                    mapInfo: value,
-                                                })
-                                            }
-                                            options={immuneMapOptions}
-                                            placeholder="Select immune annotation file"
-                                            style={{ width: "100%" }}
-                                            disabled={
-                                                isSubmitting ||
-                                                isImmuneMapLoading ||
-                                                isImmuneMapError
-                                            }
-                                            loading={isImmuneMapLoading}
-                                            showSearch
-                                            optionFilterProp="label"
-                                        />
-                                    </Form.Item>
-                                </Space>
-                            </Col>
+                            {/*        <Form.Item*/}
+                            {/*            name="mapInfo"*/}
+                            {/*            style={{ marginBottom: 0 }}*/}
+                            {/*            rules={[*/}
+                            {/*                {*/}
+                            {/*                    required: true,*/}
+                            {/*                    message:*/}
+                            {/*                        "Please select an immune annotation file.",*/}
+                            {/*                },*/}
+                            {/*            ]}*/}
+                            {/*        >*/}
+                            {/*            <Select*/}
+                            {/*                value={workflowParams.mapInfo}*/}
+                            {/*                onChange={(value) =>*/}
+                            {/*                    updateWorkflowParams({*/}
+                            {/*                        mapInfo: value,*/}
+                            {/*                    })*/}
+                            {/*                }*/}
+                            {/*                options={immuneMapOptions}*/}
+                            {/*                placeholder="Select immune annotation file"*/}
+                            {/*                style={{ width: "100%" }}*/}
+                            {/*                disabled={*/}
+                            {/*                    isSubmitting ||*/}
+                            {/*                    isImmuneMapLoading ||*/}
+                            {/*                    isImmuneMapError*/}
+                            {/*                }*/}
+                            {/*                loading={isImmuneMapLoading}*/}
+                            {/*                showSearch*/}
+                            {/*                optionFilterProp="label"*/}
+                            {/*            />*/}
+                            {/*        </Form.Item>*/}
+                            {/*    </Space>*/}
+                            {/*</Col>*/}
                         </Row>
 
                         {

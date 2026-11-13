@@ -16,6 +16,7 @@ import {
     Spin,
     Typography,
     Upload,
+    Tooltip
 } from "antd";
 import {
     ExperimentOutlined,
@@ -24,6 +25,7 @@ import {
     InboxOutlined,
     InfoCircleFilled,
     QuestionCircleOutlined,
+    InfoCircleOutlined
 } from "@ant-design/icons";
 import { Box, Stack } from "@mui/system";
 import Link from "next/link";
@@ -45,32 +47,32 @@ const { Text, Link: AntLink } = Typography;
 const TASK_NAME_PATTERN = /^[A-Za-z0-9_-]+$/;
 const TASK_NAME_MAX_LENGTH = 64;
 
-const CANCER_TYPE_OPTIONS = [
-    "MEL",
-    "LUAD",
-    "OS",
-    "STAD",
-    "BRCA",
-    "CRC",
-    "NSCLC",
-    "OV",
-    "LUSC",
-    "UCEC",
-    "CESC",
-    "HCC",
-    "AML",
-    "ALL",
-    "PRAD",
-    "SCLC",
-    "NBL",
-    "MM",
-    "Lymphoma",
-    "PAAD",
-    "",
-].map(value => ({
-    label: value || "None",
-    value,
-}));
+// const CANCER_TYPE_OPTIONS = [
+//     "MEL",
+//     "LUAD",
+//     "OS",
+//     "STAD",
+//     "BRCA",
+//     "CRC",
+//     "NSCLC",
+//     "OV",
+//     "LUSC",
+//     "UCEC",
+//     "CESC",
+//     "HCC",
+//     "AML",
+//     "ALL",
+//     "PRAD",
+//     "SCLC",
+//     "NBL",
+//     "MM",
+//     "Lymphoma",
+//     "PAAD",
+//     "",
+// ].map(value => ({
+//     label: value || "None",
+//     value,
+// }));
 
 const USE_PADJ_OPTIONS = [
     {
@@ -88,7 +90,6 @@ const initialWorkflowParams = {
     mapInfo: undefined,
 
     degMethod: "limma",
-    cancerType: "",
     usePadj: true,
 
     logfcCutoffMrna: 1,
@@ -114,10 +115,9 @@ const initialFileState = {
 
 const demoWorkflowParams = {
     taskName: "demo_task_module2",
-    mapInfo: "ImmiRImmiR_ACC",
+    mapInfo: "ImmiRImmiR_LUAD",
 
     degMethod: "limma",
-    cancerType: "LUAD",
     usePadj: true,
 
     logfcCutoffMrna: 1,
@@ -192,6 +192,10 @@ const Module2SubmitWrapper = () => {
         isError: isImmuneMapError,
     } = useImmuneAnnotationList();
 
+    const selectedImmuneMap = immuneMapOptions.find(
+        option => option.value === workflowParams.mapInfo
+    );
+
     const updateWorkflowParams = (patch) => {
         setWorkflowParams((prev) => ({
             ...prev,
@@ -234,7 +238,14 @@ const Module2SubmitWrapper = () => {
         }
 
         if (!workflowParams.mapInfo) {
-            messageApi.error("Immune annotation file is required.");
+            messageApi.error("Cancer type is required.");
+            return false;
+        }
+
+        if (!selectedImmuneMap?.label) {
+            messageApi.error(
+                "No matching cancer type found for the selected immune annotation."
+            );
             return false;
         }
 
@@ -258,12 +269,12 @@ const Module2SubmitWrapper = () => {
             return false;
         }
 
-        const validCancerTypes = CANCER_TYPE_OPTIONS.map(option => option.value);
-
-        if (!validCancerTypes.includes(workflowParams.cancerType)) {
-            messageApi.error("Invalid cancer type.");
-            return false;
-        }
+        // const validCancerTypes = CANCER_TYPE_OPTIONS.map(option => option.value);
+        //
+        // if (!validCancerTypes.includes(workflowParams.cancerType)) {
+        //     messageApi.error("Invalid cancer type.");
+        //     return false;
+        // }
 
         if (typeof workflowParams.usePadj !== "boolean") {
             messageApi.error("use_padj must be true or false.");
@@ -293,7 +304,10 @@ const Module2SubmitWrapper = () => {
         formData.append("meta_file", files.metaFile.originFileObj);
 
         formData.append("deg_method", workflowParams.degMethod);
-        formData.append("cancer_type", workflowParams.cancerType ?? "");
+        formData.append(
+            "cancer_type",
+            selectedImmuneMap.label
+        );
         formData.append("use_padj", String(workflowParams.usePadj));
 
         formData.append(
@@ -547,13 +561,14 @@ const Module2SubmitWrapper = () => {
                             platform-defined format. The backend will use fixed columns:
                             <Box component="ul" sx={{ mb: 0 }}>
                                 <li>
-                                    Expression sample column: <b>sample_id</b>
+                                    <b>Expression matrix files:</b>{" "}
+                                    Required sample identifier column: <b>sample_id</b>
                                 </li>
+
                                 <li>
-                                    Meta sample column: <b>sample_id</b>
-                                </li>
-                                <li>
-                                    Meta group column: <b>c_group</b>
+                                    <b>Sample meta file:</b>{" "}
+                                    Required sample identifier column: <b>sample_id</b>
+                                    , group column: <b>c_group</b>
                                 </li>
                                 <li>
                                     Case label: <b>case</b>
@@ -562,7 +577,8 @@ const Module2SubmitWrapper = () => {
                                     Control label: <b>control</b>
                                 </li>
                                 <li>
-                                    lncRNA / circRNA rule: <b>at least one is required</b>
+                                    <b>lncRNA / circRNA expression matrix:</b>{" "}
+                                    At least one of these two files is required.
                                 </li>
                             </Box>
                         </Box>
@@ -574,7 +590,7 @@ const Module2SubmitWrapper = () => {
                     layout="vertical"
                     initialValues={initialWorkflowParams}
                 >
-                    <Stack spacing={3}>
+                <Stack spacing={3}>
                         <Row gutter={[20, 16]}>
                             <Col xs={24} md={12}>
                                 <Space
@@ -630,20 +646,35 @@ const Module2SubmitWrapper = () => {
                                     style={{ width: "100%" }}
                                 >
                                     <Space
+                                        align="center"
                                         style={{
                                             width: "100%",
                                             justifyContent: "space-between",
                                         }}
                                     >
-                                        <Text strong>
-                                            <span style={{ color: "#ff4d4f" }}>* </span>
-                                            Immune Annotation File
-                                        </Text>
+                                        <Space size={6} align="center">
+                                            <Text strong>
+                                                <span style={{ color: "#ff4d4f" }}>* </span>
+                                                Cancer Type
+                                            </Text>
 
-                                        <Link href="/workflow/immuneAnnotations">
-                                            <AntLink>
-                                                Explore Annotations
-                                            </AntLink>
+                                            <Tooltip
+                                                title="Used to filter matching cancer-relevant cell lines. The corresponding immune annotation file will be automatically selected based on the chosen cancer type."
+                                            >
+                                                <InfoCircleOutlined
+                                                    style={{
+                                                        color: "#8c8c8c",
+                                                        cursor: "help",
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        </Space>
+
+                                        <Link
+                                            href="/workflow/immuneAnnotations"
+                                            style={{ color: "#1677ff" }}
+                                        >
+                                            Explore Immune Annotations
                                         </Link>
                                     </Space>
 
@@ -653,8 +684,7 @@ const Module2SubmitWrapper = () => {
                                         rules={[
                                             {
                                                 required: true,
-                                                message:
-                                                    "Please select an immune annotation file.",
+                                                message: "Please select a cancer type.",
                                             },
                                         ]}
                                     >
@@ -666,7 +696,7 @@ const Module2SubmitWrapper = () => {
                                                 })
                                             }
                                             options={immuneMapOptions}
-                                            placeholder="Select immune annotation file"
+                                            placeholder="Select cancer type"
                                             style={{ width: "100%" }}
                                             disabled={
                                                 isSubmitting ||
@@ -880,25 +910,25 @@ const Module2SubmitWrapper = () => {
                                                 }}
                                                 spacing={3}
                                             >
-                                                <Form.Item
-                                                    label="Cancer type"
-                                                    name="cancerType"
-                                                    style={{ flex: 1 }}
-                                                    tooltip="Used to filter matching cancer-relevant cell lines. Empty means no cancer-type filtering."
-                                                >
-                                                    <Select
-                                                        disabled={isSubmitting}
-                                                        value={workflowParams.cancerType}
-                                                        onChange={(value) =>
-                                                            updateWorkflowParams({
-                                                                cancerType: value,
-                                                            })
-                                                        }
-                                                        options={CANCER_TYPE_OPTIONS}
-                                                        showSearch
-                                                        optionFilterProp="label"
-                                                    />
-                                                </Form.Item>
+                                                {/*<Form.Item*/}
+                                                {/*    label="Cancer type"*/}
+                                                {/*    name="cancerType"*/}
+                                                {/*    style={{ flex: 1 }}*/}
+                                                {/*    tooltip="Used to filter matching cancer-relevant cell lines. Empty means no cancer-type filtering."*/}
+                                                {/*>*/}
+                                                {/*    <Select*/}
+                                                {/*        disabled={isSubmitting}*/}
+                                                {/*        value={workflowParams.cancerType}*/}
+                                                {/*        onChange={(value) =>*/}
+                                                {/*            updateWorkflowParams({*/}
+                                                {/*                cancerType: value,*/}
+                                                {/*            })*/}
+                                                {/*        }*/}
+                                                {/*        options={CANCER_TYPE_OPTIONS}*/}
+                                                {/*        showSearch*/}
+                                                {/*        optionFilterProp="label"*/}
+                                                {/*    />*/}
+                                                {/*</Form.Item>*/}
 
                                                 <Form.Item
                                                     label="Use adjusted p-value"

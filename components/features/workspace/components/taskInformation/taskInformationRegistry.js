@@ -343,15 +343,15 @@ const generatePairedCohortTaskItems = (taskInformation) => {
             children: data.task_name || "--",
             span: 2,
         },
-        {
-            key: "MapInfo",
-            label: "Immune Annotation File",
-            children: formatChipValue(
-                formatMapInfoLabel(data.map_info),
-                "blue"
-            ),
-            span: 1,
-        },
+        // {
+        //     key: "MapInfo",
+        //     label: "Immune Annotation File",
+        //     children: formatChipValue(
+        //         formatMapInfoLabel(data.map_info),
+        //         "blue"
+        //     ),
+        //     span: 1,
+        // },
         {
             key: "DEGMethod",
             label: "DEG Method",
@@ -361,7 +361,7 @@ const generatePairedCohortTaskItems = (taskInformation) => {
         {
             key: "CancerType",
             label: "Cancer Type",
-            children: formatChipValue(data.cancer_type || "None", "purple"),
+            children: formatChipValue(data.cancer_type, "purple"),
             span: 1,
         },
         {
@@ -426,18 +426,18 @@ const generateHybridReferenceTaskItems = (taskInformation) => {
             children: data.task_name || "--",
             span: 2,
         },
-        {
-            key: "MapInfo",
-            label: "Immune Annotation File",
-            children: formatChipValue(
-                formatMapInfoLabel(data.map_info),
-                "blue"
-            ),
-            span: 1,
-        },
+        // {
+        //     key: "MapInfo",
+        //     label: "Immune Annotation File",
+        //     children: formatChipValue(
+        //         formatMapInfoLabel(data.map_info),
+        //         "blue"
+        //     ),
+        //     span: 1,
+        // },
         {
             key: "TCGAType",
-            label: "TCGA Reference Type",
+            label: "TCGA Reference Cancer Type",
             children: formatChipValue(data.tcga_type, "purple"),
             span: 1,
         },
@@ -506,7 +506,7 @@ const generateSCSTHybridReferenceTaskItems = (taskInformation) => {
         },
         {
             key: "DataType",
-            label: "Data Type",
+            label: "Input Data Mode",
             children: formatChipValue(
                 dataTypeLabel,
                 data.data_type === "st" ? "purple" : "blue"
@@ -515,22 +515,22 @@ const generateSCSTHybridReferenceTaskItems = (taskInformation) => {
         },
         {
             key: "GroupColumn",
-            label: "Group Column",
+            label: "H5AD obs Group Column",
             children: formatChipValue(data.group_col, "geekblue"),
             span: 1,
         },
-        {
-            key: "MapInfo",
-            label: "Immune Annotation File",
-            children: formatChipValue(
-                formatMapInfoLabel(data.map_info),
-                "blue"
-            ),
-            span: 1,
-        },
+        // {
+        //     key: "MapInfo",
+        //     label: "Immune Annotation File",
+        //     children: formatChipValue(
+        //         formatMapInfoLabel(data.map_info),
+        //         "blue"
+        //     ),
+        //     span: 1,
+        // },
         {
             key: "TCGAType",
-            label: "TCGA Reference Type",
+            label: "TCGA Reference Cancer Type",
             children: formatChipValue(data.tcga_type, "purple"),
             span: 1,
         },
